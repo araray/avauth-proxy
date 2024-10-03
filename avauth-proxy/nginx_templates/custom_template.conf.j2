@@ -1,0 +1,13 @@
+# avauth-proxy/nginx_templates/custom_template.conf.j2
+
+server {
+    listen 80;
+    server_name {{ service_name }};
+
+    location / {
+        proxy_pass http://{{ url }}:{{ port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        {{ custom_directives }}
+    }
+}

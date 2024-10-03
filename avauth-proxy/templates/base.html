@@ -1,0 +1,50 @@
+<!-- avauth-proxy/templates/base.html -->
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>{{ title if title else "OAuth2 Proxy Management" }}</title>
+        <style>
+            /* Basic styling for the application */
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            table,
+            th,
+            td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            a {
+                text-decoration: none;
+                color: blue;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            .navbar {
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        {% if 'user' in session %}
+        <div class="navbar">
+            <p>
+                Welcome, {{ session.user.get('name', 'User') }} |
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </p>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a> |
+            <a href="{{ url_for('status') }}">Status</a>
+        </div>
+        {% endif %} {% block content %}{% endblock %}
+    </body>
+</html>

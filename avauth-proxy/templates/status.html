@@ -1,0 +1,41 @@
+<!-- avauth-proxy/templates/status.html -->
+
+{% extends 'base.html' %} {% block content %}
+<h1>Status Page</h1>
+
+<h2>Current Proxies</h2>
+<table>
+    <tr>
+        <th>Service Name</th>
+        <th>URL/IP</th>
+        <th>Port</th>
+        <th>Template</th>
+    </tr>
+    {% for proxy in proxies %}
+    <tr>
+        <td>{{ proxy.service_name }}</td>
+        <td>{{ proxy.url }}</td>
+        <td>{{ proxy.port }}</td>
+        <td>{{ proxy.template }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Event Logs</h2>
+<table>
+    <tr>
+        <th>Event ID</th>
+        <th>Timestamp</th>
+        <th>Description</th>
+        <th>Event Code</th>
+    </tr>
+    {% for event in events %}
+    <tr>
+        <td>{{ event['event_id'] }}</td>
+        <td>{{ event['timestamp'] }}</td>
+        <td>{{ event['description'] }}</td>
+        <td>{{ event['code'] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

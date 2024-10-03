@@ -1,0 +1,58 @@
+<!-- avauth-proxy/templates/dashboard.html -->
+
+{% extends 'base.html' %} {% block content %}
+<h1>Proxy Management Dashboard</h1>
+
+<h2>Add New Proxy</h2>
+<form method="post" action="{{ url_for('add_proxy') }}">
+    <label>Service Name:</label><br />
+    <input type="text" name="service_name" required /><br />
+    <label>URL/IP:</label><br />
+    <input type="text" name="url" required /><br />
+    <label>Port:</label><br />
+    <input type="number" name="port" required /><br />
+    <label>Template:</label><br />
+    <select name="template">
+        {% for template in templates %}
+        <option value="{{ template }}">{{ template }}</option>
+        {% endfor %}</select
+    ><br />
+    <label>Custom Directives:</label><br />
+    <textarea name="custom_directives" rows="5" cols="40"></textarea
+    ><br /><br />
+    <button type="submit">Add Proxy</button>
+</form>
+
+<h2>Current Proxies</h2>
+<table>
+    <tr>
+        <th>Service Name</th>
+        <th>URL/IP</th>
+        <th>Port</th>
+        <th>Template</th>
+        <th>Actions</th>
+    </tr>
+    {% for proxy in proxies %}
+    <tr>
+        <td>{{ proxy.service_name }}</td>
+        <td>{{ proxy.url }}</td>
+        <td>{{ proxy.port }}</td>
+        <td>{{ proxy.template }}</td>
+        <td>
+            <form method="post" action="{{ url_for('remove_proxy') }}">
+                <input
+                    type="hidden"
+                    name="service_name"
+                    value="{{ proxy.service_name }}"
+                />
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<form method="post" action="{{ url_for('refresh_proxies') }}">
+    <button type="submit">Refresh Proxies</button>
+</form>
+{% endblock %}
