@@ -5,6 +5,7 @@ gunicorn
 jinja2
 uuid
 tomli
+tomli-w
 pytest
 requests
 requests-cache
