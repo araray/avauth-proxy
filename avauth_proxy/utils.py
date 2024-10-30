@@ -3,7 +3,8 @@
 import os
 import uuid
 import datetime
-import tomli as tomllib
+import tomllib
+import tomli_w as tomlw
 from jinja2 import Environment, FileSystemLoader
 from .config import Config
 
@@ -53,12 +54,12 @@ def load_proxies():
             return data.get('proxies', [])
     else:
         with open(Config.PROXIES_CONFIG_FILE, 'wb') as f:
-            tomllib.dump({'proxies': []}, f)
+            tomlw.dump({'proxies': []}, f)
         return []
 
 def save_proxies(proxies):
     with open(Config.PROXIES_CONFIG_FILE, 'wb') as f:
-        tomllib.dump({'proxies': proxies}, f)
+        tomlw.dump({'proxies': proxies}, f)
 
 def generate_nginx_configs(proxies):
     nginx_templates_dir = Config.NGINX_TEMPLATES_DIR
