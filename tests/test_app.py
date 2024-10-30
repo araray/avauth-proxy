@@ -2,8 +2,8 @@
 
 import pytest
 import os
-from avauth-proxy import app
-from avauth-proxy.utils import load_proxies, save_proxies
+from avauth_proxy import app
+from avauth_proxy.utils import load_proxies, save_proxies
 
 @pytest.fixture
 def client():

@@ -3,7 +3,7 @@ services:
     build: .
     volumes:
       - ./logs:/app/logs
-      - ./avauth-proxy/nginx_templates:/app/avauth-proxy/nginx_templates
+      - ./avauth_proxy/nginx_templates:/app/avauth_proxy/nginx_templates
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
       - ./proxies_config.toml:/app/proxies_config.toml
       - ./config.toml:/app/config.toml

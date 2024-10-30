@@ -1,4 +1,4 @@
-# avauth-proxy/__init__.py
+# avauth_proxy/__init__.py
 
 from flask import Flask
 from authlib.integrations.flask_client import OAuth

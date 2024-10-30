@@ -1,4 +1,4 @@
-# avauth-proxy/config.py
+# avauth_proxy/config.py
 
 import os
 

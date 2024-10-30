@@ -1,4 +1,4 @@
-# avauth-proxy/utils.py
+# avauth_proxy/utils.py
 
 import os
 import uuid

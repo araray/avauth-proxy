@@ -1,6 +1,6 @@
-# avauth-proxy/app.py
+# avauth_proxy/app.py
 
-from avauth-proxy import app
+from avauth_proxy import app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
