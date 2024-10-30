@@ -6,3 +6,6 @@ jinja2
 uuid
 tomli  # Use 'tomli' if using Python < 3.11
 pytest
+requests
+requests-cache
+requests-oauthlib
