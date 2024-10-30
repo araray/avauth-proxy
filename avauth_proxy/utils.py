@@ -3,7 +3,7 @@
 import os
 import uuid
 import datetime
-import tomllib  # Use 'tomli' if using Python < 3.11
+import tomli as tomllib
 from jinja2 import Environment, FileSystemLoader
 from .config import Config
 
