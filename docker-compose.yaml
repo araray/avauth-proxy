@@ -2,11 +2,8 @@ services:
   app:
     build: .
     volumes:
-      - ./logs:/app/logs
-      - ./avauth_proxy/nginx_templates:/app/avauth_proxy/nginx_templates
+      - .:/app
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
-      - ./proxies_config.toml:/app/proxies_config.toml
-      - ./config.toml:/app/config.toml
     environment:
       SECRET_KEY: your-secret-key
     ports:
