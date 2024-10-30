@@ -9,3 +9,4 @@ pytest
 requests
 requests-cache
 requests-oauthlib
+watchdog
