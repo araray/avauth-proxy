@@ -8,6 +8,7 @@ python-json-logger
 tomli
 tomli-w
 pytest
+pytest-mock
 requests
 requests-cache
 requests-oauthlib

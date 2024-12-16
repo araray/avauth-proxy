@@ -7,6 +7,17 @@ session_cookie_httponly = true
 session_cookie_samesite = "Lax"
 
 [[oauth_providers]]
+name = "mock_provider"
+client_id = "mock_client_id"
+client_secret = "mock_client_secret"
+authorize_url = "http://localhost:6000/oauth/authorize"
+access_token_url = "http://localhost:6000/oauth/token"
+api_base_url = "http://localhost:6000/oauth/"
+client_kwargs = { scope = "read write" }
+label = "Sign in with Mock OAuth"
+image_url = "https://via.placeholder.com/150"           # Placeholder image URL
+
+[[oauth_providers]]
 name = "google"
 client_id = "YOUR_GOOGLE_CLIENT_ID"
 client_secret = "YOUR_GOOGLE_CLIENT_SECRET"

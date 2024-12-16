@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    command: ["pytest"] # Automatically runs tests on startup
+    environment:
+      FLASK_ENV: testing
+      CONFIG_FILE: /app/tests/config_test.toml
+      SECRET_KEY: "test-secret-key"
+    volumes:
+      - .:/app
+    depends_on:
+      - mock_oauth2_server
+    networks:
+      - test_network
+    app:
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5000"]
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
+  mock_oauth2_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock_oauth
+    ports:
+      - "6000:6000"
+    networks:
+      - test_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6000/oauth/token"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  test_network:
+    driver: bridge

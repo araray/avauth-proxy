@@ -1,0 +1,16 @@
+[app]
+secret_key = "test-secret-key"
+session_cookie_secure = false
+session_cookie_httponly = true
+session_cookie_samesite = "Lax"
+
+[[oauth_providers]]
+name = "mock_provider"
+client_id = "mock_client_id"
+client_secret = "mock_client_secret"
+authorize_url = "http://mock_oauth2_server:6000/oauth/authorize"
+access_token_url = "http://mock_oauth2_server:6000/oauth/token"
+api_base_url = "http://mock_oauth2_server:6000/oauth/"
+client_kwargs = { scope = "read write" }
+label = "Sign in with Mock OAuth"
+image_url = "https://via.placeholder.com/150"

@@ -1,0 +1,11 @@
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+COPY mock_oauth2_server.py .
+
+RUN pip install --no-cache-dir Flask authlib
+
+EXPOSE 6000
+
+CMD ["python", "mock_oauth2_server.py"]

@@ -2,9 +2,12 @@ from flask import Flask
 from authlib.integrations.flask_client import OAuth
 from avauth_proxy.utils.config_utils import get_app_config
 from avauth_proxy.utils.logging_utils import configure_logging
+from avauth_proxy.config import Config
 
 # Initialize Flask app
 app = Flask(__name__)
+app.config.from_object(Config)
+app.secret_key = Config.SECRET_KEY
 
 # Load application-specific configurations
 app_config = get_app_config()
@@ -18,7 +21,7 @@ app.config.update({
 # Configure logging
 configure_logging()
 
-# Initialize OAuth
+# Initialize OAuth (this must happen before other imports use `oauth`)
 oauth = OAuth(app)
 
 # Import and register blueprints

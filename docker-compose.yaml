@@ -11,16 +11,39 @@ services:
       - "5001:5000"
     depends_on:
       - nginx
+      - oauth2_proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   nginx:
     image: nginx:latest
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
+      - ./ssl:/etc/nginx/ssl # Ensure SSL certs are properly mounted
     ports:
       - "8000:80"
+      - "443:443"
+    depends_on:
+      - app
+      - oauth2_proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  oauth2_proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.1
+    environment:
+      OAUTH2_PROXY_CLIENT_ID: "your-client-id"
+      OAUTH2_PROXY_CLIENT_SECRET: "your-client-secret"
+      OAUTH2_PROXY_COOKIE_SECRET: "your-cookie-secret"
+      OAUTH2_PROXY_PROVIDER: "google"
+    ports:
+      - "4180:4180"
+    depends_on:
+      - app

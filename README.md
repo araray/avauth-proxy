@@ -32,8 +32,30 @@ This project extends the OAuth2-proxy functionality by adding a web-based user i
 
 ### Running the Application
 
-1. **Build and Run with Docker Compose:**
+1. **Build and Run with Docker Compose**:
 
    ```bash
    docker-compose build
    docker-compose up
+   ```
+
+2. **Access the Admin Dashboard:**
+
+  - Visit http://localhost:5001/dashboard to manage proxies.
+
+3. **Run Tests**:
+
+  - Run unit tests using pytest:
+  ```bash
+   pytest
+  ```
+
+  - Run the test environment with Docker Compose:
+  ```bash
+  python run_tests.py
+  ```
+
+4. **Logs and Metrics**:
+
+  - Check logs in the `./logs` directory.
+  - Access Prometheus metrics at `http://localhost:5001/metrics`.

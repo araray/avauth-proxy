@@ -2,7 +2,7 @@
 <h1>Proxy Management Dashboard</h1>
 
 <h2>Add New Proxy</h2>
-<form method="post" action="{{ url_for('proxy.add_proxy') }}">
+<form id="add-proxy-form">
     <label>Service Name:</label><br />
     <input type="text" name="service_name" required /><br />
     <label>URL/IP:</label><br />
@@ -20,6 +20,8 @@
     ><br /><br />
     <button type="submit">Add Proxy</button>
 </form>
+
+<div id="status-message"></div>
 
 <h2>Current Proxies</h2>
 <table>
@@ -49,4 +51,28 @@
     </tr>
     {% endfor %}
 </table>
+
+<script>
+    document.getElementById("add-proxy-form").onsubmit = async function (e) {
+        e.preventDefault(); // Prevent traditional form submission
+
+        const formData = new FormData(e.target); // Serialize form data
+
+        // Send a POST request via Fetch API
+        const response = await fetch("{{ url_for('proxy.add_proxy') }}", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (response.ok) {
+            // Reload the page on success to fetch the updated proxies
+            location.reload();
+        } else {
+            // Display an error message
+            const errorMessage = await response.text();
+            document.getElementById("status-message").innerHTML =
+                `<p style="color:red;">${errorMessage}</p>`;
+        }
+    };
+</script>
 {% endblock %}

@@ -1,9 +1,15 @@
 from flask import Blueprint, render_template, session, redirect, url_for
-from avauth_proxy.utils.oauth_utils import load_oauth_providers, oauth
+from avauth_proxy import oauth
+from avauth_proxy.utils.oauth_utils import load_oauth_providers
 
 auth_bp = Blueprint("auth", __name__)
 
-oauth_providers = load_oauth_providers(oauth)
+# Load OAuth providers
+oauth_providers = load_oauth_providers()
+
+@auth_bp.route("/")
+def index():
+    return redirect(url_for("auth.login"))  # Redirect to the login page by default
 
 @auth_bp.route("/login")
 def login():
