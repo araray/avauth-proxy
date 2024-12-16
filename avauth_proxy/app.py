@@ -1,5 +1,3 @@
-# avauth_proxy/app.py
-
 from avauth_proxy import app
 
 if __name__ == '__main__':

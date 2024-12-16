@@ -1,11 +1,11 @@
-<!-- avauth_proxy/templates/login.html -->
-
 {% extends 'base.html' %} {% block content %}
 <h1>Please Choose a Login Provider</h1>
 <div>
     {% for provider in providers %}
     <div style="display: inline-block; margin: 10px; text-align: center">
-        <a href="{{ url_for('oauth_login', provider_name=provider.name) }}">
+        <a
+            href="{{ url_for('auth.oauth_login', provider_name=provider.name) }}"
+        >
             <img
                 src="{{ provider.image_url }}"
                 alt="{{ provider.label }}"

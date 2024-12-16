@@ -10,12 +10,12 @@ session_cookie_samesite = "Lax"
 name = "google"
 client_id = "YOUR_GOOGLE_CLIENT_ID"
 client_secret = "YOUR_GOOGLE_CLIENT_SECRET"
-authorize_url = "https://accounts.google.com/o/oauth2/auth"
-access_token_url = "https://accounts.google.com/o/oauth2/token"
+authorize_url = "http://192.168.0.8:6000/oauth/authorize"
+access_token_url = "http://192.168.0.8:6000/oauth/token"
 api_base_url = "https://www.googleapis.com/oauth2/v1/"
 client_kwargs = { scope = "openid email profile" }
-label = "Sign in with Google"
-image_url = "https://developers.google.com/identity/images/g-logo.png"
+label = "Sign in with Araras"
+image_url = ""
 
 [[oauth_providers]]
 name = "microsoft"

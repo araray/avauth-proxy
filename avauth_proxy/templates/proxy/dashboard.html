@@ -1,10 +1,8 @@
-<!-- avauth_proxy/templates/dashboard.html -->
-
 {% extends 'base.html' %} {% block content %}
 <h1>Proxy Management Dashboard</h1>
 
 <h2>Add New Proxy</h2>
-<form method="post" action="{{ url_for('add_proxy') }}">
+<form method="post" action="{{ url_for('proxy.add_proxy') }}">
     <label>Service Name:</label><br />
     <input type="text" name="service_name" required /><br />
     <label>URL/IP:</label><br />
@@ -39,7 +37,7 @@
         <td>{{ proxy.port }}</td>
         <td>{{ proxy.template }}</td>
         <td>
-            <form method="post" action="{{ url_for('remove_proxy') }}">
+            <form method="post" action="{{ url_for('proxy.remove_proxy') }}">
                 <input
                     type="hidden"
                     name="service_name"
@@ -51,8 +49,4 @@
     </tr>
     {% endfor %}
 </table>
-
-<form method="post" action="{{ url_for('refresh_proxies') }}">
-    <button type="submit">Refresh Proxies</button>
-</form>
 {% endblock %}

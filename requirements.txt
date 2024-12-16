@@ -4,6 +4,7 @@ prometheus_client
 gunicorn
 jinja2
 uuid
+python-json-logger
 tomli
 tomli-w
 pytest
