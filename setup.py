@@ -21,6 +21,7 @@ setup(
         "requests-cache",
         "requests-oauthlib",
         "watchdog",
+        "coverage",
+        "pytest-cov",
     ],
 )
-

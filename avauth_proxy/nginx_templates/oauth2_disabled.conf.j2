@@ -1,0 +1,16 @@
+# This template is used when use_oauth2_proxy = false
+# No auth_request, internal OAuth handled by the Flask app itself.
+
+server {
+    listen 80;
+    server_name {{ service_name|default("backend") }};
+
+    location / {
+        proxy_pass http://{{ url }}:{{ port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        {{ custom_directives }}
+    }
+}

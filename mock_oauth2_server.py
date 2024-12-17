@@ -4,11 +4,9 @@ from authlib.oauth2.rfc6749 import grants
 from werkzeug.security import gen_salt
 from datetime import datetime, timedelta
 
-# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "mock-oauth2-server-secret-key"
 
-# In-memory storage for simplicity
 users = {
     "testuser": {"password": "password123", "email": "testuser@example.com", "name": "Test User"}
 }
@@ -16,7 +14,6 @@ users = {
 clients = {}
 tokens = {}
 
-# Utilities for the current time
 def current_time():
     return datetime.utcnow()
 
@@ -30,11 +27,9 @@ def generate_user_info(user_id):
         }
     return None
 
-# OAuth2 Client Queries
 def query_client(client_id):
     return clients.get(client_id)
 
-# Saving tokens
 def save_token(token, request):
     tokens[token["access_token"]] = {
         "token": token,
@@ -42,7 +37,6 @@ def save_token(token, request):
         "expires_at": current_time() + timedelta(seconds=token["expires_in"]),
     }
 
-# Define OAuth2 Grant Types
 class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
     def authenticate_user(self, username, password):
         user = users.get(username)
@@ -53,15 +47,12 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
     def save_token(self, token_data, request):
         save_token(token_data, request)
 
-# Configure Authorization Server
-authorization = AuthorizationServer(
-    app,
-    query_client=query_client,
-    save_token=save_token,
-)
+authorization = AuthorizationServer(app, query_client=query_client, save_token=save_token)
 authorization.register_grant(PasswordGrant)
 
-# Endpoints
+@app.route("/health")
+def health():
+    return "OK", 200
 
 @app.route("/oauth/token", methods=["POST"])
 def issue_token():
@@ -100,15 +91,9 @@ def register_client():
 
     return jsonify({"client_id": client_id, "client_secret": client_secret})
 
-
 @app.route("/oauth/authorize", methods=["GET", "POST"])
 def mock_authorize():
-    """
-    For a full implementation, you would handle redirect-based authorizations here.
-    Currently, this server only implements password grant for simplicity.
-    """
     return jsonify({"message": "Authorization endpoint not implemented. Use the password grant instead."}), 400
 
-
 if __name__ == "__main__":
-    app.run(port=6000, debug=True)
+    app.run(host="0.0.0.0", port=6000, debug=True)

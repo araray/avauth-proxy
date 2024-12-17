@@ -54,21 +54,16 @@
 
 <script>
     document.getElementById("add-proxy-form").onsubmit = async function (e) {
-        e.preventDefault(); // Prevent traditional form submission
-
-        const formData = new FormData(e.target); // Serialize form data
-
-        // Send a POST request via Fetch API
+        e.preventDefault();
+        const formData = new FormData(e.target);
         const response = await fetch("{{ url_for('proxy.add_proxy') }}", {
             method: "POST",
             body: formData,
         });
 
         if (response.ok) {
-            // Reload the page on success to fetch the updated proxies
             location.reload();
         } else {
-            // Display an error message
             const errorMessage = await response.text();
             document.getElementById("status-message").innerHTML =
                 `<p style="color:red;">${errorMessage}</p>`;

@@ -4,6 +4,9 @@ session_cookie_secure = false
 session_cookie_httponly = true
 session_cookie_samesite = "Lax"
 
+[auth]
+use_oauth2_proxy = false
+
 [[oauth_providers]]
 name = "mock_provider"
 client_id = "mock_client_id"

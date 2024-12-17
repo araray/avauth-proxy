@@ -1,10 +1,13 @@
-# config.toml
-
 [app]
 secret_key = "your-secret-key"
 session_cookie_secure = true
 session_cookie_httponly = true
 session_cookie_samesite = "Lax"
+
+[auth]
+# If true, use external oauth2-proxy authentication (Nginx auth_request).
+# If false, handle OAuth2 internally via Authlib providers defined below.
+use_oauth2_proxy = true
 
 [[oauth_providers]]
 name = "mock_provider"
@@ -15,18 +18,18 @@ access_token_url = "http://localhost:6000/oauth/token"
 api_base_url = "http://localhost:6000/oauth/"
 client_kwargs = { scope = "read write" }
 label = "Sign in with Mock OAuth"
-image_url = "https://via.placeholder.com/150"           # Placeholder image URL
+image_url = "https://via.placeholder.com/150"
 
 [[oauth_providers]]
 name = "google"
 client_id = "YOUR_GOOGLE_CLIENT_ID"
 client_secret = "YOUR_GOOGLE_CLIENT_SECRET"
-authorize_url = "http://192.168.0.8:6000/oauth/authorize"
-access_token_url = "http://192.168.0.8:6000/oauth/token"
+authorize_url = "https://accounts.google.com/o/oauth2/auth"
+access_token_url = "https://oauth2.googleapis.com/token"
 api_base_url = "https://www.googleapis.com/oauth2/v1/"
 client_kwargs = { scope = "openid email profile" }
-label = "Sign in with Araras"
-image_url = ""
+label = "Sign in with Google"
+image_url = "https://developers.google.com/identity/images/g-logo.png"
 
 [[oauth_providers]]
 name = "microsoft"
@@ -38,5 +41,3 @@ api_base_url = "https://graph.microsoft.com/v1.0/"
 client_kwargs = { scope = "User.Read" }
 label = "Sign in with Microsoft"
 image_url = "https://login.live.com/images/microsoft_logo.png"
-
-# Add more providers as needed

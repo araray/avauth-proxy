@@ -33,14 +33,14 @@
         </style>
     </head>
     <body>
-        {% if "user" in session %}
+        {% if not config.USE_OAUTH2_PROXY and "user" in session %}
         <div class="navbar">
             <p>
                 Welcome, {{ session.user.get("name", "User") }} |
                 <a href="{{ url_for('auth.logout') }}">Logout</a>
             </p>
             <a href="{{ url_for('proxy.dashboard') }}">Dashboard</a> |
-            <a href="{{ url_for('proxy.dashboard') }}">Status</a>
+            <a href="{{ url_for('proxy.status') }}">Status</a>
         </div>
         {% endif %} {% block content %}{% endblock %}
     </body>

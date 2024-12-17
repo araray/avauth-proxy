@@ -1,5 +1,5 @@
 from flask import Blueprint
-from prometheus_client import generate_latest, Counter, Gauge, make_wsgi_app
+from prometheus_client import generate_latest, Counter, Gauge
 
 metrics_bp = Blueprint("metrics", __name__)
 
@@ -9,4 +9,7 @@ auth_failures = Counter("auth_failures", "Failed authentication attempts")
 
 @metrics_bp.route("/")
 def metrics():
+    """
+    Prometheus scrape endpoint for metrics.
+    """
     return generate_latest()

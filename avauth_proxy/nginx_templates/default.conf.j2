@@ -1,12 +1,34 @@
+# This template is used when use_oauth2_proxy = true
+# Auth is handled by oauth2-proxy through Nginx auth_request
+
 server {
     listen 80;
     server_name {{ service_name|default("backend") }};
 
+    # Enforce authentication at this level
+    auth_request /auth;
+    error_page 401 = /error401;
+
     location / {
-        proxy_pass http://{{ backend_url }};
+        proxy_pass http://{{ url }}:{{ port }};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        {{ custom_directives }}
+    }
+
+    # Authentication endpoint
+    location /auth {
+        proxy_pass http://oauth2_proxy;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /error401 {
+        default_type text/plain;
+        return 401 'Unauthorized';
     }
 }

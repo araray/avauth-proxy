@@ -1,6 +1,6 @@
+import os
 import tomllib
 import tomli_w as tomlw
-import os
 from avauth_proxy.config import Config
 
 def load_proxies():
@@ -8,7 +8,7 @@ def load_proxies():
         with open(Config.PROXIES_CONFIG_FILE, "rb") as f:
             return tomllib.load(f).get("proxies", [])
     else:
-        save_proxies([])  # Create an empty file if it doesn't exist
+        save_proxies([])
         return []
 
 def save_proxies(proxies):

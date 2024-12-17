@@ -3,10 +3,11 @@ version: "3.8"
 services:
   app:
     build: .
-    command: ["pytest"] # Automatically runs tests on startup
+    #command: ["pytest"]
+    command: tail -f /dev/null
     environment:
       FLASK_ENV: testing
-      CONFIG_FILE: /app/tests/config_test.toml
+      CONFIG_TOML_FILE: /app/avauth_proxy/tests/config_test.toml
       SECRET_KEY: "test-secret-key"
     volumes:
       - .:/app
@@ -14,12 +15,11 @@ services:
       - mock_oauth2_server
     networks:
       - test_network
-    app:
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:5000"]
-        interval: 10s
-        timeout: 5s
-        retries: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   mock_oauth2_server:
     build:
@@ -30,10 +30,10 @@ services:
     networks:
       - test_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6000/oauth/token"]
+      test: ["CMD", "curl", "-f", "http://localhost:6000/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 6
 
 networks:
   test_network:

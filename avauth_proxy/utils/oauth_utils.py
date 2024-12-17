@@ -1,23 +1,16 @@
 from avauth_proxy.utils.config_utils import get_oauth_providers
 
-def load_oauth_providers():
+def load_oauth_providers(oauth):
     """
-    Dynamically registers OAuth providers using the configuration file.
-
-    :return: A dictionary mapping provider names to their configuration details.
+    Register OAuth providers dynamically.
     """
-    # Delay importing `oauth` to avoid circular import
-    from avauth_proxy import oauth
-
     providers_config = get_oauth_providers()
     oauth_providers = {}
 
     for provider in providers_config:
-        # Extract client-specific kwargs or set defaults
         client_kwargs = provider.get("client_kwargs", {})
         client_kwargs.setdefault("scope", "openid email profile")
 
-        # Register the provider with OAuth
         oauth.register(
             name=provider["name"],
             client_id=provider["client_id"],

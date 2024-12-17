@@ -10,7 +10,6 @@ services:
     ports:
       - "5001:5000"
     depends_on:
-      - nginx
       - oauth2_proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000"]
@@ -23,13 +22,10 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
-      - ./ssl:/etc/nginx/ssl # Ensure SSL certs are properly mounted
+      - ./ssl:/etc/nginx/ssl
     ports:
       - "8000:80"
       - "443:443"
-    depends_on:
-      - app
-      - oauth2_proxy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 30s
@@ -45,5 +41,8 @@ services:
       OAUTH2_PROXY_PROVIDER: "google"
     ports:
       - "4180:4180"
-    depends_on:
-      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4180"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

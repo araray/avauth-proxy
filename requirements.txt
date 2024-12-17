@@ -8,8 +8,10 @@ python-json-logger
 tomli
 tomli-w
 pytest
-pytest-mock
 requests
+pytest-mock
 requests-cache
 requests-oauthlib
 watchdog
+coverage
+pytest-cov
