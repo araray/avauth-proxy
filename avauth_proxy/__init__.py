@@ -31,6 +31,8 @@ app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(proxy_bp, url_prefix="/proxy")
 app.register_blueprint(metrics_bp, url_prefix="/metrics")
 
+print(app.url_map)
+
 # If internal OAuth is used, login endpoints are under /auth
 # If oauth2-proxy is used, authentication is handled externally.
 
@@ -39,10 +41,6 @@ def index():
     # Redirect to dashboard if logged in internally, else login
     if not Config.USE_OAUTH2_PROXY:
         if 'user' in session:
-            return proxy_bp.view_functions['dashboard']()
+            return redirect(url_for('proxy.dashboard'))
         else:
-            return auth_bp.view_functions['login']()
-    else:
-        # If using oauth2-proxy, user must come authenticated externally
-        # The dashboard itself will check authentication.
-        return proxy_bp.view_functions['dashboard']()
+            return redirect(url_for('auth.login'))
