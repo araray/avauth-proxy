@@ -79,21 +79,25 @@ def register_client():
     client_secret = gen_salt(48)
     redirect_uris = request.form.get("redirect_uris", "").split()
 
-    clients[client_id] = {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "redirect_uris": redirect_uris,
-        "token_endpoint_auth_method": "client_secret_basic",
-        "grant_types": ["password"],
-        "response_types": [],
-        "scope": "read write",
+    clients = {
+        "mock_client_id": {
+            "client_id": "mock_client_id",
+            "client_secret": "mock_client_secret",
+            "redirect_uris": [],
+            "token_endpoint_auth_method": "client_secret_basic",
+            "grant_types": ["password"],
+            "response_types": [],
+            "scope": "read write"
+        }
     }
 
     return jsonify({"client_id": client_id, "client_secret": client_secret})
 
+
 @app.route("/oauth/authorize", methods=["GET", "POST"])
 def mock_authorize():
     return jsonify({"message": "Authorization endpoint not implemented. Use the password grant instead."}), 400
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6000, debug=True)

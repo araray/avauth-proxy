@@ -13,10 +13,12 @@ def test_mock_oauth_flow():
         data={
             "grant_type": "password",
             "username": "testuser",
-            "password": "password123"
+            "password": "password123",
+            "scope": "read write"
         },
-        auth=("mock_client_id", "mock_client_secret")
+        auth=("mock_client_id", "mock_client_secret")  # Basic Auth for client_secret_basic
     )
+
 
     assert token_res.status_code == 200, f"Token request failed: {token_res.text}"
     data = token_res.json()
