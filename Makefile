@@ -17,8 +17,11 @@ test-env-up:
 test-env-down:
 	docker-compose -f docker-compose_test.yaml down
 
+coverage: test-env-up
+	docker-compose -f docker-compose_test.yaml exec app pytest --cov=avauth_proxy --cov-report term-missing
+	$(MAKE) test-env-down
+
 test: test-env-up
-	#docker-compose -f docker-compose_test.yaml exec app pytest --cov=avauth_proxy --cov-report term-missing
 	docker-compose -f docker-compose_test.yaml exec app pytest
 	$(MAKE) test-env-down
 

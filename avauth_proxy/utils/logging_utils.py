@@ -1,5 +1,5 @@
 import logging
-from pythonjsonlogger.jsonlogger import JsonFormatter
+from pythonjsonlogger.json import JsonFormatter
 from avauth_proxy.config import Config
 import os
 import uuid

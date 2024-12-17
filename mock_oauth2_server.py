@@ -7,11 +7,48 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.secret_key = "mock-oauth2-server-secret-key"
 
+# Mock user database
 users = {
     "testuser": {"password": "password123", "email": "testuser@example.com", "name": "Test User"}
 }
 
-clients = {}
+# Define a Client class to satisfy Authlib's requirements
+class Client:
+    def __init__(self, client_info):
+        self.client_id = client_info["client_id"]
+        self.client_secret = client_info["client_secret"]
+        self.grant_types = client_info.get("grant_types", [])
+        self.allowed_scopes = client_info.get("scope", "")
+
+    def check_client_secret(self, secret):
+        return secret == self.client_secret
+
+    def check_grant_type(self, grant_type):
+        return grant_type in self.grant_types
+
+    def check_endpoint_auth_method(self, method, endpoint):
+        # For simplicity, just return True
+        return True
+
+    def get_allowed_scope(self, scope):
+            # For testing, simply return the requested scope unchanged.
+            # In a real scenario, you'd filter to ensure the scope is a subset of allowed scopes.
+            # Here, we assume the requested scope is allowed.
+            return scope
+
+# Pre-register a mock OAuth client that supports password grant
+clients = {
+    "mock_client_id": {
+        "client_id": "mock_client_id",
+        "client_secret": "mock_client_secret",
+        "redirect_uris": [],
+        "token_endpoint_auth_method": "client_secret_basic",
+        "grant_types": ["password"],
+        "response_types": [],
+        "scope": "read write"
+    }
+}
+
 tokens = {}
 
 def current_time():
@@ -28,7 +65,10 @@ def generate_user_info(user_id):
     return None
 
 def query_client(client_id):
-    return clients.get(client_id)
+    client_data = clients.get(client_id)
+    if not client_data:
+        return None
+    return Client(client_data)
 
 def save_token(token, request):
     tokens[token["access_token"]] = {
@@ -44,8 +84,9 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
             return username
         return None
 
-    def save_token(self, token_data, request):
-        save_token(token_data, request)
+    def save_token(self, token):
+        request = self.request
+        save_token(token, request)
 
 authorization = AuthorizationServer(app, query_client=query_client, save_token=save_token)
 authorization.register_grant(PasswordGrant)
@@ -75,29 +116,15 @@ def user_info():
 
 @app.route("/client/register", methods=["POST"])
 def register_client():
+    # This endpoint is not currently used by tests.
     client_id = gen_salt(24)
     client_secret = gen_salt(48)
-    redirect_uris = request.form.get("redirect_uris", "").split()
-
-    clients = {
-        "mock_client_id": {
-            "client_id": "mock_client_id",
-            "client_secret": "mock_client_secret",
-            "redirect_uris": [],
-            "token_endpoint_auth_method": "client_secret_basic",
-            "grant_types": ["password"],
-            "response_types": [],
-            "scope": "read write"
-        }
-    }
-
+    # This just returns random client creds, not stored.
     return jsonify({"client_id": client_id, "client_secret": client_secret})
-
 
 @app.route("/oauth/authorize", methods=["GET", "POST"])
 def mock_authorize():
     return jsonify({"message": "Authorization endpoint not implemented. Use the password grant instead."}), 400
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6000, debug=True)

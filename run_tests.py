@@ -5,7 +5,7 @@ import time
 def wait_for_services():
     """Wait for services to be healthy before running tests."""
     print("[INFO] Waiting for services to be ready...")
-    time.sleep(15)  # Can be improved with healthchecks.
+    time.sleep(15)  # better to rely on healthchecks, but this is a simple wait
 
 def run_tests():
     """Run the tests with coverage in the test environment."""
