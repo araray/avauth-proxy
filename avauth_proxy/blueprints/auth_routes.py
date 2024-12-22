@@ -55,3 +55,48 @@ def logout():
     if Config.USE_OAUTH2_PROXY:
         return redirect("/oauth2/sign_out")
     return redirect(url_for("auth.login"))
+
+@auth_bp.route("/validate/<service_name>")
+def validate_service(service_name):
+    """
+    This is called by Nginx 'auth_request' to check if the user is logged in
+    and if they're allowed for this particular service.
+    Return 200 if allowed, 401 or 403 if not.
+    """
+    from avauth_proxy.utils.file_utils import load_proxies
+    proxies = load_proxies()
+
+    # Find the matching service config
+    service = next((p for p in proxies if p["service_name"] == service_name), None)
+    if not service:
+        # If service not found, deny
+        return "", 403
+
+    # Check if the user is in Flask session
+    if "user" not in session:
+        # Not logged in => return 401
+        return "", 401
+
+    user_info = session["user"]  # e.g., user_info["email"]
+    user_email = user_info.get("email")
+
+    # If service has auth_required == false, then 200
+    if not service.get("auth_required", False):
+        return "", 200
+
+    # If service has a list of allowed_emails
+    allowed_emails = service.get("allowed_emails", [])
+    allowed_domains = service.get("allowed_domains", [])
+
+    # If the user email is in allowed_emails => OK
+    if user_email in allowed_emails:
+        return "", 200
+
+    # Or if domain is in allowed_domains
+    user_domain = user_email.split("@")[-1] if user_email else ""
+    if user_domain in allowed_domains:
+        return "", 200
+
+    # Otherwise 403
+    return "", 403
+

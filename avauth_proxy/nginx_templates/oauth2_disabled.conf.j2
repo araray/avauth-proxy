@@ -1,5 +1,10 @@
 # This template is used when use_oauth2_proxy = false
 # No auth_request, internal OAuth handled by the Flask app itself.
+{% if auth_required %}
+auth_request /auth/validate/{{ service_name }};
+error_page 401 = /auth/login;  # or redirect somewhere
+error_page 403 = /auth/forbidden;
+{% endif %}
 
 server {
     listen 80;

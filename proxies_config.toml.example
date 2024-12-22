@@ -1,0 +1,45 @@
+## If auth_required = true, we add:
+## ```
+## auth_request /auth/validate/{{ service_name }};
+## error_page 401 = /auth/login;    # or /auth/forbidden
+## error_page 403 = /auth/forbidden;
+## ```
+## When a request hits Nginx for that service, Nginx does an internal subrequest to
+## /auth/validate/<service_name> on the Flask app.
+##
+## That route must return:
+## 
+##    - 200 OK if the user is allowed,
+##    - 401 Unauthorized if not logged in,
+##    - 403 Forbidden if logged in but not authorized for that service.
+## 
+## If 200 is returned, Nginx proxies the request to the backend.
+## Otherwise, Nginx blocks or redirects, depending on your config.
+## 
+[[proxies]]
+service_name = "public_service"
+url = "10.0.0.2"
+port = "8080"
+template = "oauth2_disabled.conf.j2"
+auth_required = false
+allowed_emails = []
+allowed_domains = []
+
+[[proxies]]
+service_name = "internal_docs"
+url = "10.0.0.3"
+port = "8081"
+template = "oauth2_disabled.conf.j2"
+auth_required = true
+allowed_emails = ["alice@example.com", "bob@example.com"]
+allowed_domains = []
+
+[[proxies]]
+service_name = "private_area"
+url = "10.0.0.4"
+port = "9090"
+template = "oauth2_disabled.conf.j2"
+auth_required = true
+allowed_emails = []
+allowed_domains = ["mycompany.com"]
+
