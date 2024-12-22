@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, current_app
 from avauth_proxy.utils.oauth_utils import load_oauth_providers
-from avauth_proxy.utils.logging_utils import log_event
+from avauth_proxy.utils.logging_utils import log_configuration_on_error, log_event
 from avauth_proxy.config import Config
 from avauth_proxy import oauth
 
@@ -43,25 +43,27 @@ def authorize(provider_name):
 
     client = oauth.create_client(provider_name)
     try:
-        # Get the token first
         token = client.authorize_access_token()
 
         # For Google (OpenID Connect), we don't need to make a separate userinfo call
         if provider_name == "google":
             user_info = token.get('userinfo')
             if not user_info:
-                # Fallback to parsing ID token if userinfo isn't in the token response
                 user_info = client.parse_id_token(token)
         else:
-            # For other providers, use the userinfo endpoint
             user_info = client.userinfo()
 
         session["user"] = user_info
         log_event(f"Successful login for provider {provider_name}", "auth_success")
         return redirect(url_for("proxy.dashboard"))
     except Exception as e:
+        # Get the full configuration for logging
+        config = get_app_config()
+
+        # Log the error with full configuration details
+        log_configuration_on_error(e, config, provider_name)
+
         error_message = f"Authorization failed for {provider_name}: {str(e)}"
-        log_event(error_message, "auth_error")
         return error_message, 400
 
 @auth_bp.route("/logout")

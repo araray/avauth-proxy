@@ -14,6 +14,7 @@ def require_admin():
         return redirect(url_for("auth.login"))
     user_email = session["user"].get("email")
     # If user_email is not in admin list, 403
+    print(Config)
     if user_email not in Config.ADMIN_EMAILS:
         return abort(403, "Forbidden: not an admin")
 
