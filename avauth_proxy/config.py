@@ -6,6 +6,8 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
+    ADMIN_EMAILS = []
+
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     # Read CONFIG_TOML_FILE from environment or default

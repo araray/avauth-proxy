@@ -10,6 +10,7 @@ app = Flask(__name__)
 # Now load dynamic config
 app_config = get_app_config()
 Config.USE_OAUTH2_PROXY = app_config.get("use_oauth2_proxy", True)
+Config.ADMIN_EMAILS = app_config.get("admin_emails", [])
 
 app.secret_key = app_config.get("secret_key", Config.SECRET_KEY)
 app.config.update({
