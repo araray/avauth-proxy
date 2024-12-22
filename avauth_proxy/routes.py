@@ -26,10 +26,15 @@ event_counter = Counter('event_count', 'Number of events in the log')
 
 @app.route('/')
 def index():
-    if 'user' in session:
-        return redirect(url_for('dashboard'))
+    if Config.USE_OAUTH2_PROXY:
+        # If using external oauth2-proxy, you can just show the dashboard
+        # or do whatever logic you want. For example:
+        return redirect(url_for('proxy.dashboard'))
     else:
-        return redirect(url_for('login'))
+        if 'user' in session:
+            return redirect(url_for('proxy.dashboard'))
+        else:
+            return redirect(url_for('auth.login'))
 
 @app.route('/login')
 def login():

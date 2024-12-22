@@ -8,6 +8,11 @@ __pycache__/
 
 # Avauth testing/dev artifacts
 src
+docker-compose.yaml
+config.toml
+*paranoid_land*
+nginx/nginx.conf
+ssl/*.pem
 
 # Distribution / packaging
 .Python
