@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from avauth_proxy.utils.file_utils import load_proxies, save_proxies
 from avauth_proxy.utils.nginx_utils import generate_nginx_configs
 from avauth_proxy.utils.logging_utils import log_event
+from avauth_proxy.utils.decorator_utils import log_route_error
 from avauth_proxy.config import Config
 from avauth_proxy.utils import get_available_templates, load_events
 
@@ -19,6 +20,7 @@ def require_admin():
         return abort(403, "Forbidden: not an admin")
 
 @proxy_bp.route("/dashboard")
+@log_route_error()
 def dashboard():
     if Config.USE_OAUTH2_PROXY:
         # External auth - assume Nginx + oauth2-proxy handle it.
@@ -35,6 +37,7 @@ def dashboard():
     return render_template("proxy/dashboard.html", proxies=proxies, templates=templates)
 
 @proxy_bp.route("/add_proxy", methods=["POST"])
+@log_route_error()
 def add_proxy():
     """
     Add a new proxy configuration.
@@ -75,6 +78,7 @@ def add_proxy():
     return redirect(url_for("proxy.dashboard"))
 
 @proxy_bp.route("/remove_proxy", methods=["POST"])
+@log_route_error()
 def remove_proxy():
     """
     Remove a proxy configuration.
@@ -90,6 +94,7 @@ def remove_proxy():
     return redirect(url_for("proxy.dashboard"))
 
 @proxy_bp.route("/status")
+@log_route_error()
 def status():
     """
     Status page showing current proxies and event logs.

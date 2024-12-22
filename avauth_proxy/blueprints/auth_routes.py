@@ -1,19 +1,17 @@
-from flask import Blueprint, render_template, session, redirect, url_for, current_app
+from flask import Blueprint, render_template, session, redirect, url_for
 from avauth_proxy.utils.oauth_utils import load_oauth_providers
 from avauth_proxy.utils.logging_utils import log_configuration_on_error, log_event
+from avauth_proxy.utils.decorator_utils import log_route_error
 from avauth_proxy.config import Config
 from avauth_proxy import oauth
 
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/login")
+@log_route_error()
 def login():
-    """
-    Display a login page if internal OAuth is enabled.
-    If oauth2-proxy is used, this endpoint might be unnecessary.
-    """
+    """Display login page if internal OAuth is enabled."""
     if Config.USE_OAUTH2_PROXY:
-        # If using oauth2-proxy, user shouldn't reach here.
         return redirect("/oauth2/sign_in")
 
     providers = load_oauth_providers(oauth)
@@ -21,6 +19,7 @@ def login():
     return render_template("auth/login.html", providers=providers_list)
 
 @auth_bp.route("/login/<provider_name>")
+@log_route_error()
 def oauth_login(provider_name):
     if Config.USE_OAUTH2_PROXY:
         return "Not applicable when using oauth2-proxy", 400
@@ -31,6 +30,10 @@ def oauth_login(provider_name):
 
     redirect_uri = url_for("auth.authorize", provider_name=provider_name, _external=True)
     return oauth.create_client(provider_name).authorize_redirect(redirect_uri)
+
+@auth_bp.route("/authorize/<provider_name>")
+@log_route_error()
+
 
 @auth_bp.route("/authorize/<provider_name>")
 def authorize(provider_name):
