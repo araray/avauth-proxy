@@ -33,9 +33,6 @@ def oauth_login(provider_name):
 
 @auth_bp.route("/authorize/<provider_name>")
 @log_route_error()
-
-
-@auth_bp.route("/authorize/<provider_name>")
 def authorize(provider_name):
     if Config.USE_OAUTH2_PROXY:
         return "Not applicable when using oauth2-proxy", 400
