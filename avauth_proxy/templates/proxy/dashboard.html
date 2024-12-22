@@ -3,21 +3,25 @@
 
 <h2>Add New Proxy</h2>
 <form id="add-proxy-form">
-    <label>Service Name:</label><br />
-    <input type="text" name="service_name" required /><br />
-    <label>URL/IP:</label><br />
-    <input type="text" name="url" required /><br />
-    <label>Port:</label><br />
-    <input type="number" name="port" required /><br />
-    <label>Template:</label><br />
+    <label>Service Name:</label>
+    <input type="text" name="service_name" required />
+    <label>URL/IP:</label>
+    <input type="text" name="url" required />
+    <label>Port:</label>
+    <input type="number" name="port" required />
+    <label>Template:</label>
     <select name="template">
         {% for template in templates %}
         <option value="{{ template }}">{{ template }}</option>
-        {% endfor %}</select
-    ><br />
-    <label>Custom Directives:</label><br />
-    <textarea name="custom_directives" rows="5" cols="40"></textarea
-    ><br /><br />
+        {% endfor %}
+    </select>
+    <label>Auth Required:</label>
+    <input type="checkbox" name="auth_required" value="true" />
+    <label>Allowed Emails (comma-separated):</label>
+    <textarea name="allowed_emails"></textarea>
+    <label>Allowed Domains (comma-separated):</label>
+    <textarea name="allowed_domains"></textarea>
+
     <button type="submit">Add Proxy</button>
 </form>
 

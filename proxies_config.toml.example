@@ -8,16 +8,17 @@
 ## /auth/validate/<service_name> on the Flask app.
 ##
 ## That route must return:
-## 
+##
 ##    - 200 OK if the user is allowed,
 ##    - 401 Unauthorized if not logged in,
 ##    - 403 Forbidden if logged in but not authorized for that service.
-## 
+##
 ## If 200 is returned, Nginx proxies the request to the backend.
 ## Otherwise, Nginx blocks or redirects, depending on your config.
-## 
+##
 [[proxies]]
 service_name = "public_service"
+server_name = "public.example.com"
 url = "10.0.0.2"
 port = "8080"
 template = "oauth2_disabled.conf.j2"
@@ -42,4 +43,3 @@ template = "oauth2_disabled.conf.j2"
 auth_required = true
 allowed_emails = []
 allowed_domains = ["mycompany.com"]
-

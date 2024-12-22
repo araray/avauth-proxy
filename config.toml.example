@@ -3,6 +3,7 @@ secret_key = "your-secret-key"
 session_cookie_secure = true
 session_cookie_httponly = true
 session_cookie_samesite = "Lax"
+admin_emails = ["example@domain.tld", "another.admin@example.tld"]
 
 [auth]
 # If true, use external oauth2-proxy authentication (Nginx auth_request).

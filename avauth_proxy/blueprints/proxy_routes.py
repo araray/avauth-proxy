@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, abort
 from avauth_proxy.utils.file_utils import load_proxies, save_proxies
 from avauth_proxy.utils.nginx_utils import generate_nginx_configs
 from avauth_proxy.utils.logging_utils import log_event
@@ -6,6 +6,16 @@ from avauth_proxy.config import Config
 from avauth_proxy.utils import get_available_templates, load_events
 
 proxy_bp = Blueprint("proxy", __name__)
+
+@proxy_bp.before_request
+def require_admin():
+    # If user not logged in, redirect to login
+    if "user" not in session:
+        return redirect(url_for("auth.login"))
+    user_email = session["user"].get("email")
+    # If user_email is not in admin list, 403
+    if user_email not in Config.ADMIN_EMAILS:
+        return abort(403, "Forbidden: not an admin")
 
 @proxy_bp.route("/dashboard")
 def dashboard():
@@ -37,14 +47,27 @@ def add_proxy():
     template = request.form["template"]
     custom_directives = request.form.get("custom_directives", "")
 
+    auth_required_str = request.form.get("auth_required", "false")
+    auth_required = auth_required_str.lower() in ("true", "on", "1")
+
+    allowed_emails_str = request.form.get("allowed_emails", "")
+    allowed_emails = [e.strip() for e in allowed_emails_str.split(",") if e.strip()]
+
+    allowed_domains_str = request.form.get("allowed_domains", "")
+    allowed_domains = [d.strip() for d in allowed_domains_str.split(",") if d.strip()]
+
     proxies = load_proxies()
     proxies.append({
         "service_name": service_name,
         "url": url_,
         "port": port,
         "template": template,
+        "auth_required": auth_required,
+        "allowed_emails": allowed_emails,
+        "allowed_domains": allowed_domains,
         "custom_directives": custom_directives
     })
+
     save_proxies(proxies)
     generate_nginx_configs(proxies)
     log_event(f"Added new proxy: {service_name}", "add")
