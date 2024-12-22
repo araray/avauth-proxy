@@ -1,6 +1,0 @@
-[[proxies]]
-service_name = "test_service"
-url = "127.0.0.1"
-port = "8000"
-template = "default.conf.j2"
-custom_directives = ""
