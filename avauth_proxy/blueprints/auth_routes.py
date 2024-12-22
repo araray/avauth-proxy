@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, current_app
 from avauth_proxy.utils.oauth_utils import load_oauth_providers
 from avauth_proxy.config import Config
 from avauth_proxy import oauth
@@ -41,10 +41,22 @@ def authorize(provider_name):
         return "Unsupported provider", 400
 
     client = oauth.create_client(provider_name)
-    token = client.authorize_access_token()
-    user_info = client.userinfo()
-    session["user"] = user_info
-    return redirect(url_for("proxy.dashboard"))
+    try:
+        token = client.authorize_access_token()
+
+        # For OpenID Connect providers like Google
+        if "id_token" in token:
+            user_info = client.parse_id_token(token)
+        else:
+            # Fallback to userinfo endpoint for regular OAuth2
+            user_info = client.userinfo()
+
+        session["user"] = user_info
+        return redirect(url_for("proxy.dashboard"))
+    except Exception as e:
+        # Log the error for debugging
+        current_app.logger.error(f"Authorization failed: {str(e)}")
+        return f"Authorization failed: {str(e)}", 400
 
 @auth_bp.route("/logout")
 def logout():
@@ -99,4 +111,3 @@ def validate_service(service_name):
 
     # Otherwise 403
     return "", 403
-
