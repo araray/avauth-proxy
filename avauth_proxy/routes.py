@@ -1,8 +1,6 @@
 # avauth_proxy/routes.py
 
 import os
-import uuid
-import datetime
 from flask import render_template, redirect, url_for, session, request
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from prometheus_client import generate_latest, Counter, Gauge, make_wsgi_app
@@ -48,20 +46,20 @@ def oauth_login(provider_name):
     redirect_uri = url_for('authorize', provider_name=provider_name, _external=True)
     return oauth.create_client(provider_name).authorize_redirect(redirect_uri)
 
-@app.route('/authorize/<provider_name>')
-def authorize(provider_name):
-    if provider_name not in oauth_providers:
-        return "Unsupported provider", 400
-    try:
-        client = oauth.create_client(provider_name)
-        token = client.authorize_access_token()
-        user_info = client.userinfo()
-        session['user'] = user_info
-        auth_user_count.inc()
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        auth_failures.inc()
-        return f"Authentication failed: {e}"
+# @app.route('/authorize/<provider_name>')
+# def authorize(provider_name):
+#     if provider_name not in oauth_providers:
+#         return "Unsupported provider", 400
+#     try:
+#         client = oauth.create_client(provider_name)
+#         token = client.authorize_access_token()
+#         user_info = client.userinfo()
+#         session['user'] = user_info
+#         auth_user_count.inc()
+#         return redirect(url_for('dashboard'))
+#     except Exception as e:
+#         auth_failures.inc()
+#         return f"Authentication failed: {e}"
 
 @app.route('/logout')
 def logout():

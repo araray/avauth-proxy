@@ -22,7 +22,7 @@ configure_logging()
 
 oauth = OAuth(app)  # OAuth instance for internal OAuth mode
 
-# Blueprints
+# Import and register blueprints
 from avauth_proxy.blueprints.auth_routes import auth_bp
 from avauth_proxy.blueprints.proxy_routes import proxy_bp
 from avauth_proxy.blueprints.metrics_routes import metrics_bp
@@ -44,3 +44,4 @@ def index():
             return redirect(url_for('proxy.dashboard'))
         else:
             return redirect(url_for('auth.login'))
+    return redirect(url_for('proxy.dashboard'))
