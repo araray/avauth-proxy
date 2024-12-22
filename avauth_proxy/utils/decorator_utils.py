@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request
 from avauth_proxy.utils.logging_utils import log_configuration_on_error
-from config_utils import get_app_config
+from avauth_proxy.utils.config_utils import get_app_config
 
 def log_route_error():
     """
