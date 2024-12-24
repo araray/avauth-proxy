@@ -8,12 +8,14 @@ __pycache__/
 
 # Avauth testing/dev artifacts
 src
+.vscode/
 docker-compose.yaml
 config.toml
 proxies_config.toml
 *paranoid_land*
 nginx/nginx.conf
 ssl/*.pem
+RANDOM/
 
 # Distribution / packaging
 .Python
