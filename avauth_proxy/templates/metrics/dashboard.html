@@ -1,0 +1,776 @@
+{% extends "base.html" %} {% block styles %}
+<style>
+    /* Custom styling for metrics dashboard */
+    .metric-card {
+        border-radius: 0.5rem;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+        height: 100%;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 1rem 0;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .health-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    .health-score-excellent {
+        background-color: #28a745;
+    }
+    .health-score-good {
+        background-color: #17a2b8;
+    }
+    .health-score-fair {
+        background-color: #ffc107;
+    }
+    .health-score-poor {
+        background-color: #dc3545;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1.5rem;
+    }
+
+    .insight-card {
+        border-left: 4px solid #007bff;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .insight-card.warning {
+        border-left-color: #ffc107;
+    }
+
+    .insight-card.danger {
+        border-left-color: #dc3545;
+    }
+
+    .trend-indicator {
+        font-size: 1.25rem;
+        margin-left: 0.5rem;
+    }
+
+    .trend-up {
+        color: #28a745;
+    }
+    .trend-down {
+        color: #dc3545;
+    }
+    .trend-stable {
+        color: #6c757d;
+    }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Metrics Dashboard</h1>
+        <div class="btn-group">
+            <button
+                class="btn btn-outline-secondary"
+                onclick="refreshMetrics()"
+            >
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button
+                class="btn btn-outline-secondary dropdown-toggle"
+                data-bs-toggle="dropdown"
+            >
+                Export
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a
+                        class="dropdown-item"
+                        href="#"
+                        onclick="exportMetrics('json')"
+                    >
+                        JSON
+                    </a>
+                </li>
+                <li>
+                    <a
+                        class="dropdown-item"
+                        href="#"
+                        onclick="exportMetrics('csv')"
+                    >
+                        CSV
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- System Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card p-3">
+                <div class="metric-label">Total Proxies</div>
+                <div class="metric-value">{{ proxies|length }}</div>
+                <div class="text-muted">
+                    {{ proxies|selectattr('health_status', 'equalto',
+                    'ok')|list|length }} healthy
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card p-3">
+                <div class="metric-label">Total Requests (24h)</div>
+                <div class="metric-value" id="totalRequests">
+                    <!-- Filled by JavaScript -->
+                </div>
+                <div class="text-muted" id="requestsTrend">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card p-3">
+                <div class="metric-label">Average Response Time</div>
+                <div class="metric-value" id="avgResponseTime">
+                    <!-- Filled by JavaScript -->
+                </div>
+                <div class="text-muted" id="responseTrend">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card p-3">
+                <div class="metric-label">System Health</div>
+                <div class="metric-value" id="systemHealth">
+                    <!-- Filled by JavaScript -->
+                </div>
+                <div class="text-muted">Based on all proxy health scores</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Request Volume</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="requestsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Response Times</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="responseTimesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proxy Status Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Proxy Services</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table" id="proxyTable">
+                    <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Health</th>
+                            <th>Requests (24h)</th>
+                            <th>Avg Response Time</th>
+                            <th>Error Rate</th>
+                            <th>Data Transfer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proxy in proxies %} {% set metrics =
+                        proxy_metrics[proxy.id] %}
+                        <tr data-proxy-id="{{ proxy.id }}">
+                            <td>
+                                <a
+                                    href="{{ url_for('metrics.proxy_metrics', proxy_id=proxy.id) }}"
+                                >
+                                    {{ proxy.service_name }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span
+                                        class="health-indicator health-score-{{ metrics.health_score|health_class }}"
+                                    ></span>
+                                    {{ metrics.health_score|round(1) }}%
+                                </div>
+                            </td>
+                            <td>
+                                {{ metrics.summary.total_requests|format_number
+                                }}
+                            </td>
+                            <td>
+                                {{ metrics.summary.avg_response_time|round(2)
+                                }}ms
+                            </td>
+                            <td>
+                                <span
+                                    class="text-{{ 'danger' if metrics.summary.error_rate > 5 else 'success' }}"
+                                >
+                                    {{ metrics.summary.error_rate|round(2) }}%
+                                </span>
+                            </td>
+                            <td>
+                                {{ (metrics.summary.total_bytes_in +
+                                metrics.summary.total_bytes_out)|format_bytes }}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button
+                                        class="btn btn-sm btn-outline-primary"
+                                        onclick="showProxyDetails({{ proxy.id }})"
+                                        title="View Details"
+                                    >
+                                        <i class="bi bi-graph-up"></i>
+                                    </button>
+                                    <button
+                                        class="btn btn-sm btn-outline-secondary"
+                                        onclick="exportProxyMetrics({{ proxy.id }})"
+                                        title="Export Metrics"
+                                    >
+                                        <i class="bi bi-download"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Section -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Insights</h5>
+                </div>
+                <div class="card-body">
+                    <div id="insightsContainer">
+                        {% for proxy in proxies %} {% set insights =
+                        proxy_metrics[proxy.id].insights %} {% for
+                        recommendation in insights.recommendations %}
+                        <div
+                            class="insight-card {{ 'warning' if 'consider' in recommendation|lower else 'danger' if 'investigate' in recommendation|lower }}"
+                        >
+                            <strong>{{ proxy.service_name }}:</strong>
+                            {{ recommendation }}
+                        </div>
+                        {% endfor %} {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Traffic Patterns</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trafficPatternsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Proxy Details Modal -->
+<div class="modal fade" id="proxyDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Proxy Details</h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize DataTable
+    let proxyTable;
+    // Chart instances
+    let requestsChart;
+    let responseTimesChart;
+    let trafficPatternsChart;
+
+    // Initialize components
+    $(document).ready(function () {
+        initializeDataTable();
+        initializeCharts();
+        startAutoRefresh();
+    });
+
+    /**
+     * Initialize the DataTable for proxy listing with sorting and export capabilities.
+     * This table shows all proxies with their key metrics and provides quick actions.
+     */
+    function initializeDataTable() {
+        proxyTable = $("#proxyTable").DataTable({
+            dom: "Bfrtip",
+            buttons: ["copy", "csv", "excel", "pdf"],
+            pageLength: 10,
+            lengthMenu: [
+                [10, 25, 50, -1],
+                [10, 25, 50, "All"],
+            ],
+            order: [[1, "desc"]], // Sort by health score by default
+            columnDefs: [
+                {
+                    targets: -1, // Actions column
+                    orderable: false,
+                },
+            ],
+        });
+    }
+
+    /**
+     * Initialize all charts used in the dashboard.
+     * Creates empty charts that will be populated with data via API calls.
+     */
+    function initializeCharts() {
+        // Request Volume Chart
+        const requestsCtx = document
+            .getElementById("requestsChart")
+            .getContext("2d");
+        requestsChart = new Chart(requestsCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Request Volume Over Time",
+                    },
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Requests per Minute",
+                        },
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Time",
+                        },
+                    },
+                },
+            },
+        });
+
+        // Response Times Chart
+        const responseTimesCtx = document
+            .getElementById("responseTimesChart")
+            .getContext("2d");
+        responseTimesChart = new Chart(responseTimesCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Response Times",
+                    },
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Response Time (ms)",
+                        },
+                    },
+                },
+            },
+        });
+
+        // Traffic Patterns Chart
+        const trafficPatternsCtx = document
+            .getElementById("trafficPatternsChart")
+            .getContext("2d");
+        trafficPatternsChart = new Chart(trafficPatternsCtx, {
+            type: "bar",
+            data: {
+                labels: [],
+                datasets: [],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Traffic Distribution by Hour",
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Average Requests",
+                        },
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Hour of Day",
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    /**
+     * Start automatic refresh of metrics data.
+     * Updates the dashboard every 30 seconds.
+     */
+    function startAutoRefresh() {
+        setInterval(refreshMetrics, 30000);
+    }
+
+    /**
+     * Refresh all metrics data on the dashboard.
+     * Updates charts, tables, and summary statistics.
+     */
+    async function refreshMetrics() {
+        try {
+            // Fetch updated metrics data
+            const response = await fetch("/metrics/data");
+            if (!response.ok) {
+                throw new Error("Failed to fetch metrics data");
+            }
+            const data = await response.json();
+
+            // Update summary statistics
+            updateSummaryStats(data.summary);
+
+            // Update charts
+            updateCharts(data.charts);
+
+            // Update table data
+            updateProxyTable(data.proxies);
+
+            // Update insights
+            updateInsights(data.insights);
+        } catch (error) {
+            showAlert("Error refreshing metrics: " + error.message, "danger");
+        }
+    }
+
+    /**
+     * Update the summary statistics cards at the top of the dashboard.
+     * @param {Object} summary - Summary statistics data
+     */
+    function updateSummaryStats(summary) {
+        $("#totalRequests").text(formatNumber(summary.total_requests));
+        $("#avgResponseTime").text(`${summary.avg_response_time.toFixed(2)}ms`);
+        $("#systemHealth").text(`${summary.health_score.toFixed(1)}%`);
+
+        // Update trends
+        updateTrendIndicator("requestsTrend", summary.requests_trend);
+        updateTrendIndicator("responseTrend", summary.response_time_trend);
+    }
+
+    /**
+     * Update a trend indicator with an arrow and percentage.
+     * @param {string} elementId - ID of the trend element
+     * @param {Object} trend - Trend data object
+     */
+    function updateTrendIndicator(elementId, trend) {
+        const element = $(`#${elementId}`);
+        const arrow =
+            trend.direction === "up"
+                ? "↑"
+                : trend.direction === "down"
+                  ? "↓"
+                  : "→";
+        const colorClass =
+            trend.direction === "up"
+                ? "trend-up"
+                : trend.direction === "down"
+                  ? "trend-down"
+                  : "trend-stable";
+
+        element.html(`
+        <span class="${colorClass}">
+            ${arrow} ${Math.abs(trend.percentage).toFixed(1)}%
+        </span>
+        vs previous
+    `);
+    }
+
+    /**
+     * Update all chart visualizations with new data.
+     * @param {Object} chartData - Data for all charts
+     */
+    function updateCharts(chartData) {
+        // Update Requests Chart
+        updateTimeSeriesChart(requestsChart, chartData.requests);
+
+        // Update Response Times Chart
+        updateTimeSeriesChart(responseTimesChart, chartData.response_times);
+
+        // Update Traffic Patterns Chart
+        updateTrafficPatternsChart(
+            trafficPatternsChart,
+            chartData.traffic_patterns,
+        );
+    }
+
+    /**
+     * Update a time series chart with new data.
+     * @param {Chart} chart - Chart.js instance
+     * @param {Object} data - New chart data
+     */
+    function updateTimeSeriesChart(chart, data) {
+        chart.data.labels = data.labels;
+        chart.data.datasets = data.datasets;
+        chart.update();
+    }
+
+    /**
+     * Update the traffic patterns chart showing hourly distribution.
+     * @param {Chart} chart - Chart.js instance
+     * @param {Object} data - Traffic pattern data
+     */
+    function updateTrafficPatternsChart(chart, data) {
+        chart.data.labels = Array.from(
+            { length: 24 },
+            (_, i) => `${String(i).padStart(2, "0")}:00`,
+        );
+        chart.data.datasets = [
+            {
+                label: "Average Requests",
+                data: data.hourly_avg,
+                backgroundColor: "rgba(54, 162, 235, 0.5)",
+                borderColor: "rgb(54, 162, 235)",
+                borderWidth: 1,
+            },
+        ];
+        chart.update();
+    }
+
+    /**
+     * Update the proxy status table with fresh data.
+     * @param {Array} proxies - Array of proxy data
+     */
+    function updateProxyTable(proxies) {
+        proxyTable.clear();
+        proxyTable.rows.add(
+            proxies.map((proxy) => [
+                `<a href="/metrics/proxy/${proxy.id}">${proxy.service_name}</a>`,
+                createHealthIndicator(proxy.health_score),
+                formatNumber(proxy.total_requests),
+                `${proxy.avg_response_time.toFixed(2)}ms`,
+                createErrorRateIndicator(proxy.error_rate),
+                formatBytes(proxy.total_bytes),
+                createActionButtons(proxy.id),
+            ]),
+        );
+        proxyTable.draw();
+    }
+
+    /**
+     * Create HTML for a health status indicator.
+     * @param {number} score - Health score
+     * @returns {string} HTML for health indicator
+     */
+    function createHealthIndicator(score) {
+        const className =
+            score >= 90
+                ? "excellent"
+                : score >= 75
+                  ? "good"
+                  : score >= 60
+                    ? "fair"
+                    : "poor";
+        return `
+        <div class="d-flex align-items-center">
+            <span class="health-indicator health-score-${className}"></span>
+            ${score.toFixed(1)}%
+        </div>
+    `;
+    }
+
+    /**
+     * Create HTML for error rate display.
+     * @param {number} rate - Error rate percentage
+     * @returns {string} HTML for error rate
+     */
+    function createErrorRateIndicator(rate) {
+        const className =
+            rate <= 1 ? "success" : rate <= 5 ? "warning" : "danger";
+        return `
+        <span class="text-${className}">
+            ${rate.toFixed(2)}%
+        </span>
+    `;
+    }
+
+    /**
+     * Create HTML for action buttons.
+     * @param {number} proxyId - ID of the proxy
+     * @returns {string} HTML for action buttons
+     */
+    function createActionButtons(proxyId) {
+        return `
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-primary"
+                    onclick="showProxyDetails(${proxyId})"
+                    title="View Details">
+                <i class="bi bi-graph-up"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+                    onclick="exportProxyMetrics(${proxyId})"
+                    title="Export Metrics">
+                <i class="bi bi-download"></i>
+            </button>
+        </div>
+    `;
+    }
+
+    /**
+     * Update the insights section with new recommendations.
+     * @param {Array} insights - Array of insight objects
+     */
+    function updateInsights(insights) {
+        const container = $("#insightsContainer");
+        container.empty();
+
+        insights.forEach((insight) => {
+            const card = $(`
+            <div class="insight-card ${insight.type}">
+                <strong>${insight.proxy_name}:</strong>
+                ${insight.message}
+            </div>
+        `);
+            container.append(card);
+        });
+    }
+
+    /**
+     * Show detailed metrics for a specific proxy.
+     * @param {number} proxyId - ID of the proxy to show
+     */
+    async function showProxyDetails(proxyId) {
+        try {
+            const response = await fetch(`/metrics/proxy/${proxyId}/data`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch proxy details");
+            }
+            const data = await response.json();
+
+            // Load the modal content
+            const modal = $("#proxyDetailsModal");
+            modal.find(".modal-body").html(createProxyDetailsContent(data));
+
+            // Initialize charts in the modal
+            initializeProxyDetailsCharts(data);
+
+            modal.modal("show");
+        } catch (error) {
+            showAlert(
+                "Error loading proxy details: " + error.message,
+                "danger",
+            );
+        }
+    }
+
+    // Format utilities
+    const formatNumber = (num) => new Intl.NumberFormat().format(num);
+    const formatBytes = (bytes) => {
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        let value = bytes;
+        let unit = 0;
+        while (value >= 1024 && unit < units.length - 1) {
+            value /= 1024;
+            unit++;
+        }
+        return `${value.toFixed(2)} ${units[unit]}`;
+    };
+
+    // Alert system
+    function showAlert(message, type) {
+        const alert = $(`
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+        $(".container-fluid").prepend(alert);
+        setTimeout(() => alert.alert("close"), 5000);
+    }
+</script>
+{% endblock %}

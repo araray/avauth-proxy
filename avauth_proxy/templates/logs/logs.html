@@ -1,55 +1,678 @@
+<!-- avauth_proxy/templates/logs/logs.html -->
 {% extends "base.html" %} {% block content %}
-<h1>Log Viewer</h1>
-<select id="log-type">
-    <option value="nginx">Nginx Logs</option>
-    <option value="app">Application Logs</option>
-</select>
-<button onclick="fetchLogs()">View Logs</button>
-<button onclick="exportLogs('json')">Export as JSON</button>
-<button onclick="exportLogs('csv')">Export as CSV</button>
+<div class="container-fluid mt-4">
+    <h1>Log Viewer</h1>
 
-<div
-    id="log-viewer"
-    style="
-        white-space: pre;
-        margin-top: 20px;
-        border: 1px solid #ccc;
-        padding: 10px;
-        height: 300px;
-        overflow-y: scroll;
-    "
-></div>
-<select id="rows-per-page" onchange="updateRowsPerPage()">
-    <option value="5">5</option>
-    <option value="10" selected>10</option>
-    <option value="20">20</option>
-</select>
+    <!-- Filters Panel -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Log Filters</h5>
+        </div>
+        <div class="card-body">
+            <form id="logFiltersForm" class="row g-3">
+                <!-- Log Type Selection -->
+                <div class="col-md-3">
+                    <label for="logType" class="form-label">Log Type</label>
+                    <select class="form-select" id="logType">
+                        <option value="nginx">Nginx Access Logs</option>
+                        <option value="app">Application Logs</option>
+                    </select>
+                </div>
+
+                <!-- Time Range -->
+                <div class="col-md-3">
+                    <label for="timeRange" class="form-label">Time Range</label>
+                    <select class="form-select" id="timeRange">
+                        <option value="1h">Last Hour</option>
+                        <option value="24h" selected>Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+
+                <!-- Custom Date Range (initially hidden) -->
+                <div
+                    class="col-md-6"
+                    id="customDateRange"
+                    style="display: none"
+                >
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="startTime" class="form-label"
+                                >Start Time</label
+                            >
+                            <input
+                                type="datetime-local"
+                                class="form-control"
+                                id="startTime"
+                            />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endTime" class="form-label"
+                                >End Time</label
+                            >
+                            <input
+                                type="datetime-local"
+                                class="form-control"
+                                id="endTime"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Filter -->
+                <div class="col-md-3">
+                    <label for="serviceFilter" class="form-label"
+                        >Proxy Service</label
+                    >
+                    <select class="form-select" id="serviceFilter">
+                        <option value="">All Services</option>
+                        {% for proxy in proxies %}
+                        <option value="{{ proxy.service_name }}">
+                            {{ proxy.service_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status Code Filter -->
+                <div class="col-md-3">
+                    <label for="statusCodes" class="form-label"
+                        >Status Codes</label
+                    >
+                    <select class="form-select" id="statusCodes" multiple>
+                        <option value="200">200 - OK</option>
+                        <option value="301,302">3xx - Redirects</option>
+                        <option value="400,401,403,404">
+                            4xx - Client Errors
+                        </option>
+                        <option value="500,502,503,504">
+                            5xx - Server Errors
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Entries Limit -->
+                <div class="col-md-2">
+                    <label for="limit" class="form-label">Max Entries</label>
+                    <select class="form-select" id="limit">
+                        <option value="100">100</option>
+                        <option value="500">500</option>
+                        <option value="1000" selected>1,000</option>
+                        <option value="5000">5,000</option>
+                    </select>
+                </div>
+
+                <!-- Apply Filters Button -->
+                <div class="col-12">
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="applyFilters()"
+                    >
+                        <i class="bi bi-funnel"></i> Apply Filters
+                    </button>
+                    <div class="btn-group">
+                        <button
+                            type="button"
+                            class="btn btn-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                        >
+                            Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="exportLogs('json')"
+                                    >JSON</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="exportLogs('csv')"
+                                    >CSV</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Log Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row" id="statisticsPanel">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Total Requests</h6>
+                        <h3 id="totalRequests">0</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Total Bytes Transferred</h6>
+                        <h3 id="totalBytes">0</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Average Response Time</h6>
+                        <h3 id="avgResponseTime">0ms</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Error Rate</h6>
+                        <h3 id="errorRate">0%</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Code Distribution Chart -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <canvas id="statusCodeChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="methodDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Entries Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Log Entries</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="logTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>IP Address</th>
+                            <th>Method</th>
+                            <th>Path</th>
+                            <th>Status</th>
+                            <th>Bytes</th>
+                            <th>Response Time</th>
+                            <th>Service</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    async function fetchLogs() {
-        const logType = document.getElementById("log-type").value;
-        const response = await fetch(`/logs/${logType}`);
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById("log-viewer").innerText =
-                data.logs.join("");
-        } else {
-            document.getElementById("log-viewer").innerText =
-                "Error loading logs.";
+    // Initialize DataTable with export buttons
+    let logTable;
+    let statusCodeChart;
+    let methodDistributionChart;
+
+    $(document).ready(function () {
+        initializeDataTable();
+        initializeCharts();
+        setupEventHandlers();
+        applyFilters(); // Load initial data
+    });
+
+    function initializeDataTable() {
+        logTable = $("#logTable").DataTable({
+            dom: "Bfrtip",
+            buttons: ["copy", "csv", "excel", "pdf"],
+            pageLength: 25,
+            lengthMenu: [
+                [10, 25, 50, 100],
+                [10, 25, 50, 100],
+            ],
+            order: [[0, "desc"]], // Sort by timestamp descending
+            columns: [
+                { data: "timestamp" },
+                { data: "ip_address" },
+                { data: "method" },
+                { data: "path" },
+                {
+                    data: "status_code",
+                    render: function (data) {
+                        let classes = {
+                            2: "text-success",
+                            3: "text-info",
+                            4: "text-warning",
+                            5: "text-danger",
+                        };
+                        let statusClass = classes[Math.floor(data / 100)] || "";
+                        return `<span class="${statusClass}">${data}</span>`;
+                    },
+                },
+                {
+                    data: "body_bytes",
+                    render: function (data) {
+                        return formatBytes(data);
+                    },
+                },
+                {
+                    data: "response_time",
+                    render: function (data) {
+                        return `${data.toFixed(2)}ms`;
+                    },
+                },
+                { data: "proxy_service" },
+            ],
+        });
+    }
+
+    function initializeCharts() {
+        // Status Code Distribution Chart
+        const statusCtx = document
+            .getElementById("statusCodeChart")
+            .getContext("2d");
+        statusCodeChart = new Chart(statusCtx, {
+            type: "pie",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        data: [],
+                        backgroundColor: [
+                            "rgba(75, 192, 192, 0.8)", // 2xx
+                            "rgba(54, 162, 235, 0.8)", // 3xx
+                            "rgba(255, 206, 86, 0.8)", // 4xx
+                            "rgba(255, 99, 132, 0.8)", // 5xx
+                        ],
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Status Code Distribution",
+                    },
+                },
+            },
+        });
+
+        // Method Distribution Chart
+        const methodCtx = document
+            .getElementById("methodDistributionChart")
+            .getContext("2d");
+        methodDistributionChart = new Chart(methodCtx, {
+            type: "bar",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Requests by Method",
+                        data: [],
+                        backgroundColor: "rgba(75, 192, 192, 0.8)",
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "HTTP Method Distribution",
+                    },
+                },
+            },
+        });
+    }
+
+    function setupEventHandlers() {
+        // Show/hide custom date range based on time range selection
+        $("#timeRange").change(function () {
+            if ($(this).val() === "custom") {
+                $("#customDateRange").show();
+            } else {
+                $("#customDateRange").hide();
+            }
+        });
+    }
+
+    async function applyFilters() {
+        const filters = getFilterParameters();
+
+        try {
+            // Fetch logs with current filters
+            const response = await fetch(
+                `/logs/data?${new URLSearchParams(filters)}`,
+            );
+            const logs = await response.json();
+
+            // Update table data
+            logTable.clear();
+            logTable.rows.add(logs);
+            logTable.draw();
+
+            // Update statistics
+            await updateStatistics(filters);
+        } catch (error) {
+            showAlert("Error fetching logs: " + error.message, "error");
         }
     }
-</script>
-<script>
-    async function exportLogs(format) {
-        const logType = document.getElementById("log-type").value;
-        const response = await fetch(`/logs/${logType}`);
-        const logs = await response.json();
-        const blob = new Blob([JSON.stringify(logs, null, 2)], {
-            type: "application/json",
+
+    function getFilterParameters() {
+        const timeRange = $("#timeRange").val();
+        let params = {
+            log_type: $("#logType").val(),
+            service_name: $("#serviceFilter").val(),
+            status_codes: $("#statusCodes").val().join(","),
+            limit: $("#limit").val(),
+        };
+
+        if (timeRange === "custom") {
+            params.start_time = $("#startTime").val();
+            params.end_time = $("#endTime").val();
+        } else {
+            // Calculate relative time range
+            const now = new Date();
+            let start = new Date();
+
+            switch (timeRange) {
+                case "1h":
+                    start.setHours(now.getHours() - 1);
+                    break;
+                case "24h":
+                    start.setDate(now.getDate() - 1);
+                    break;
+                case "7d":
+                    start.setDate(now.getDate() - 7);
+                    break;
+            }
+
+            params.start_time = start.toISOString();
+            params.end_time = now.toISOString();
+        }
+
+        return params;
+    }
+
+    async function updateStatistics(filters) {
+        try {
+            const response = await fetch(
+                `/logs/statistics?${new URLSearchParams(filters)}`,
+            );
+            const stats = await response.json();
+
+            // Update summary statistics
+            $("#totalRequests").text(stats.total_requests.toLocaleString());
+            $("#totalBytes").text(formatBytes(stats.total_bytes));
+            $("#avgResponseTime").text(
+                `${stats.avg_response_time.toFixed(2)}ms`,
+            );
+
+            // Calculate error rate
+            const errorRequests = Object.entries(stats.status_codes)
+                .filter(([code]) => code >= 400)
+                .reduce((sum, [_, count]) => sum + count, 0);
+            const errorRate = (
+                (errorRequests / stats.total_requests) *
+                100
+            ).toFixed(1);
+            $("#errorRate").text(`${errorRate}%`);
+
+            // Update charts
+            updateStatusCodeChart(stats.status_codes);
+            updateMethodDistributionChart(stats.methods);
+        } catch (error) {
+            showAlert("Error updating statistics: " + error.message, "error");
+        }
+    }
+
+    function updateStatusCodeChart(statusCodes) {
+        // Group status codes by category
+        const categories = {
+            "2xx": 0,
+            "3xx": 0,
+            "4xx": 0,
+            "5xx": 0,
+        };
+
+        Object.entries(statusCodes).forEach(([code, count]) => {
+            const category = `${Math.floor(code / 100)}xx`;
+            categories[category] = (categories[category] || 0) + count;
         });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `logs.${format}`;
-        link.click();
+
+        statusCodeChart.data.labels = Object.keys(categories);
+        statusCodeChart.data.datasets[0].data = Object.values(categories);
+        statusCodeChart.update();
+    }
+
+    function updateMethodDistributionChart(methods) {
+        methodDistributionChart.data.labels = Object.keys(methods);
+        methodDistributionChart.data.datasets[0].data = Object.values(methods);
+        methodDistributionChart.update();
+    }
+
+    async function exportLogs(format) {
+        const filters = getFilterParameters();
+        filters.format = format;
+
+        try {
+            window.location.href = `/logs/export?${new URLSearchParams(filters)}`;
+        } catch (error) {
+            showAlert("Error exporting logs: " + error.message, "error");
+        }
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return "0 Bytes";
+
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    }
+
+    function showAlert(message, type) {
+        // Create Bootstrap alert
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = "alert";
+
+        alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+        // Insert at the top of the container
+        document
+            .querySelector(".container-fluid")
+            .insertBefore(
+                alertDiv,
+                document.querySelector(".container-fluid").firstChild,
+            );
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Add real-time log updating functionality
+    let logUpdateInterval;
+
+    function startRealTimeUpdates() {
+        // Clear any existing interval
+        if (logUpdateInterval) {
+            clearInterval(logUpdateInterval);
+        }
+
+        // Update logs every 30 seconds
+        logUpdateInterval = setInterval(() => {
+            applyFilters();
+        }, 30000);
+    }
+
+    function stopRealTimeUpdates() {
+        if (logUpdateInterval) {
+            clearInterval(logUpdateInterval);
+            logUpdateInterval = null;
+        }
+    }
+
+    // Add event listener for real-time toggle
+    document
+        .getElementById("realTimeUpdates")
+        .addEventListener("change", function () {
+            if (this.checked) {
+                startRealTimeUpdates();
+            } else {
+                stopRealTimeUpdates();
+            }
+        });
+
+    // Add clipboard copy functionality
+    function copyLogEntry(logId) {
+        const logEntry = logTable.row(`#${logId}`).data();
+        const textToCopy = JSON.stringify(logEntry, null, 2);
+
+        navigator.clipboard
+            .writeText(textToCopy)
+            .then(() => {
+                showAlert("Log entry copied to clipboard", "success");
+            })
+            .catch((err) => {
+                showAlert("Failed to copy log entry", "error");
+            });
     }
 </script>
+{% endblock %} {% block styles %}
+<style>
+    .stat-card {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+
+    .stat-card h6 {
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card h3 {
+        color: #212529;
+        margin-bottom: 0;
+    }
+
+    .table-responsive {
+        margin-bottom: 1rem;
+    }
+
+    #logTable tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    #logTable tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .status-2xx {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-3xx {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    .status-4xx {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-5xx {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+
+    #customDateRange {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .filter-group {
+        margin-bottom: 1rem;
+    }
+
+    .filter-group label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #2196f3;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+</style>
 {% endblock %}

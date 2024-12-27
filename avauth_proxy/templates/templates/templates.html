@@ -1,55 +1,262 @@
+<!-- avauth_proxy/templates/templates/templates.html -->
+
 {% extends "base.html" %} {% block content %}
-<h1>Template Management</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for template in templates %}
-        <tr>
-            <td>{{ template.name }}</td>
-            <td>
-                <button onclick="editTemplate({{ template.id }})">Edit</button>
-                <button onclick="deleteTemplate({{ template.id }})">
-                    Delete
-                </button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container mt-4">
+    <h1>Template Management</h1>
 
-<button onclick="showAddTemplateForm()">Add Template</button>
+    <!-- Template List -->
+    <div class="card mb-4">
+        <div
+            class="card-header d-flex justify-content-between align-items-center"
+        >
+            <h5 class="mb-0">Available Templates</h5>
+            <button class="btn btn-primary" onclick="showAddTemplate()">
+                <i class="bi bi-plus-circle"></i> Add Template
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="templatesTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Last Modified</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for template in templates %}
+                        <tr>
+                            <td>{{ template.name }}</td>
+                            <td>{{ template.updated_at|datetime }}</td>
+                            <td>
+                                <button
+                                    class="btn btn-sm btn-info"
+                                    onclick="editTemplate({{ template.id }})"
+                                >
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-danger"
+                                    onclick="deleteTemplate({{ template.id }})"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-success"
+                                    onclick="previewTemplate({{ template.id }})"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-<div id="template-modal" style="display: none">
-    <form id="template-form">
-        <input type="hidden" name="id" id="template-id" />
-        <label>Name:</label>
-        <input type="text" name="name" id="template-name" required />
-        <label>Content:</label>
-        <textarea name="content" id="template-content" required></textarea>
-        <button type="submit">Save</button>
-    </form>
+    <!-- Template Modal -->
+    <div class="modal fade" id="templateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="templateModalTitle">
+                        Add Template
+                    </h5>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+                <div class="modal-body">
+                    <form id="templateForm">
+                        <input type="hidden" id="templateId" />
+                        <div class="mb-3">
+                            <label for="templateName" class="form-label"
+                                >Template Name</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="templateName"
+                                required
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label for="templateContent" class="form-label"
+                                >Template Content</label
+                            >
+                            <textarea
+                                class="form-control"
+                                id="templateContent"
+                                rows="10"
+                                required
+                            ></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                    >
+                        Close
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="saveTemplate()"
+                    >
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Template Preview</h5>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="previewContent"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+{% endblock %} {% block scripts %}
 <script>
-    function showAddTemplateForm() {
-        document.getElementById("template-modal").style.display = "block";
+    $(document).ready(function () {
+        // Initialize DataTables with export buttons
+        $("#templatesTable").DataTable({
+            dom: "Bfrtip",
+            buttons: ["copy", "csv", "excel", "pdf"],
+            pageLength: 10,
+            lengthMenu: [
+                [5, 10, 25, 50, -1],
+                [5, 10, 25, 50, "All"],
+            ],
+        });
+    });
+
+    function showAddTemplate() {
+        $("#templateId").val("");
+        $("#templateName").val("");
+        $("#templateContent").val("");
+        $("#templateModalTitle").text("Add Template");
+        $("#templateModal").modal("show");
     }
-    async function deleteTemplate(id) {
-        await fetch(`/templates/${id}`, { method: "DELETE" });
-        location.reload();
-    }
+
     async function editTemplate(id) {
-        const response = await fetch(`/templates/${id}`);
-        const template = await response.json();
-        document.getElementById("template-id").value = template.id;
-        document.getElementById("template-name").value = template.name;
-        document.getElementById("template-content").value = template.content;
-        document.getElementById("template-modal").style.display = "block";
+        try {
+            const response = await fetch(`/templates/${id}`);
+            const data = await response.json();
+
+            $("#templateId").val(id);
+            $("#templateName").val(data.name);
+            $("#templateContent").val(data.content);
+            $("#templateModalTitle").text("Edit Template");
+            $("#templateModal").modal("show");
+        } catch (error) {
+            showAlert("Error loading template", "error");
+        }
+    }
+
+    async function saveTemplate() {
+        const id = $("#templateId").val();
+        const template = {
+            name: $("#templateName").val(),
+            content: $("#templateContent").val(),
+        };
+
+        try {
+            const url = id ? `/templates/${id}` : "/templates/add";
+            const method = id ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(template),
+            });
+
+            if (response.ok) {
+                $("#templateModal").modal("hide");
+                location.reload();
+            } else {
+                const error = await response.json();
+                showAlert(error.error, "error");
+            }
+        } catch (error) {
+            showAlert("Error saving template", "error");
+        }
+    }
+
+    async function deleteTemplate(id) {
+        if (!confirm("Are you sure you want to delete this template?")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/templates/${id}`, {
+                method: "DELETE",
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                const error = await response.json();
+                showAlert(error.error, "error");
+            }
+        } catch (error) {
+            showAlert("Error deleting template", "error");
+        }
+    }
+
+    async function previewTemplate(id) {
+        try {
+            const response = await fetch(`/templates/preview`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    template_id: id,
+                    parameters: {}, // Add parameters if needed
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                $("#previewContent").text(data.preview);
+                $("#previewModal").modal("show");
+            } else {
+                showAlert(data.error, "error");
+            }
+        } catch (error) {
+            showAlert("Error previewing template", "error");
+        }
+    }
+
+    function showAlert(message, type) {
+        // Implement your preferred alert system here
+        alert(message);
     }
 </script>
 {% endblock %}

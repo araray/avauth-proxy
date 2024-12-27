@@ -1,4 +1,5 @@
-from flask import Blueprint, jsonify, request, render_template, session, redirect, url_for
+from flask import Blueprint, jsonify, request, render_template, redirect, url_for
+from flask import session as flask_session
 from avauth_proxy.models import User, UserProxy, Base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -63,7 +64,7 @@ def authorize(provider_name):
         else:
             user_info = client.userinfo()
 
-        session["user"] = user_info
+        flask_session["user"] = user_info
         log_event(f"Successful login for provider {provider_name}", "auth_success")
         return redirect(url_for("proxy.dashboard"))
     except Exception as e:
@@ -81,7 +82,11 @@ def logout():
     """
     Logs out the user from the internal session if not using oauth2-proxy.
     """
-    session.pop("user", None)
+    if "user" in flask_session:
+        email = flask_session["user"].get("email")
+        log_event(f"User logged out: {email}", "auth_logout")
+        flask_session.pop("user", None)
+
     if Config.USE_OAUTH2_PROXY:
         return redirect("/oauth2/sign_out")
     return redirect(url_for("auth.login"))
@@ -103,11 +108,11 @@ def validate_service(service_name):
         return "", 403
 
     # Check if the user is in Flask session
-    if "user" not in session:
+    if "user" not in flask_session:
         # Not logged in => return 401
         return "", 401
 
-    user_info = session["user"]  # e.g., user_info["email"]
+    user_info = flask_session["user"]  # e.g., user_info["email"]
     user_email = user_info.get("email")
 
     # If service has auth_required == false, then 200
