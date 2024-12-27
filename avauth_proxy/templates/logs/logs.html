@@ -5,6 +5,8 @@
     <option value="app">Application Logs</option>
 </select>
 <button onclick="fetchLogs()">View Logs</button>
+<button onclick="exportLogs('json')">Export as JSON</button>
+<button onclick="exportLogs('csv')">Export as CSV</button>
 
 <div
     id="log-viewer"
@@ -17,7 +19,11 @@
         overflow-y: scroll;
     "
 ></div>
-
+<select id="rows-per-page" onchange="updateRowsPerPage()">
+    <option value="5">5</option>
+    <option value="10" selected>10</option>
+    <option value="20">20</option>
+</select>
 <script>
     async function fetchLogs() {
         const logType = document.getElementById("log-type").value;
@@ -30,6 +36,20 @@
             document.getElementById("log-viewer").innerText =
                 "Error loading logs.";
         }
+    }
+</script>
+<script>
+    async function exportLogs(format) {
+        const logType = document.getElementById("log-type").value;
+        const response = await fetch(`/logs/${logType}`);
+        const logs = await response.json();
+        const blob = new Blob([JSON.stringify(logs, null, 2)], {
+            type: "application/json",
+        });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `logs.${format}`;
+        link.click();
     }
 </script>
 {% endblock %}

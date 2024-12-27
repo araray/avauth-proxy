@@ -45,3 +45,7 @@ def test_mock_userinfo_request():
     )
     # This might fail if mock_token doesn't exist. You'd implement a full flow test.
     assert response.status_code in [200, 401, 404]
+
+def test_healthcheck(client):
+    response = client.post('/metrics/healthcheck')
+    assert response.status_code == 200

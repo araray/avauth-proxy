@@ -24,13 +24,14 @@ configure_logging()
 oauth = OAuth(app)  # OAuth instance for internal OAuth mode
 
 # Import and register blueprints
-from avauth_proxy.blueprints.auth_routes import auth_bp
+from avauth_proxy.blueprints.auth_routes import auth_bp, user_bp
 from avauth_proxy.blueprints.proxy_routes import proxy_bp
 from avauth_proxy.blueprints.metrics_routes import metrics_bp
 
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(proxy_bp, url_prefix="/proxy")
 app.register_blueprint(metrics_bp, url_prefix="/metrics")
+app.register_blueprint(user_bp, url_prefix="/users")
 
 print(app.url_map)
 

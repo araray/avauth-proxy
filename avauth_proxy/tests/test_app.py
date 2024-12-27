@@ -27,3 +27,8 @@ def test_add_template(client):
     })
     assert response.status_code == 201
     assert b"Template added successfully" in response.data
+
+def test_log_export(client):
+    response = client.get('/logs/app')
+    assert response.status_code == 200
+    assert "logs" in response.json
