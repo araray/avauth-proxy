@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block content %}
+<h1>Template Management</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for template in templates %}
+        <tr>
+            <td>{{ template.name }}</td>
+            <td>
+                <button onclick="editTemplate({{ template.id }})">Edit</button>
+                <button onclick="deleteTemplate({{ template.id }})">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<button onclick="showAddTemplateForm()">Add Template</button>
+
+<div id="template-modal" style="display: none">
+    <form id="template-form">
+        <input type="hidden" name="id" id="template-id" />
+        <label>Name:</label>
+        <input type="text" name="name" id="template-name" required />
+        <label>Content:</label>
+        <textarea name="content" id="template-content" required></textarea>
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+<script>
+    function showAddTemplateForm() {
+        document.getElementById("template-modal").style.display = "block";
+    }
+    async function deleteTemplate(id) {
+        await fetch(`/templates/${id}`, { method: "DELETE" });
+        location.reload();
+    }
+    async function editTemplate(id) {
+        const response = await fetch(`/templates/${id}`);
+        const template = await response.json();
+        document.getElementById("template-id").value = template.id;
+        document.getElementById("template-name").value = template.name;
+        document.getElementById("template-content").value = template.content;
+        document.getElementById("template-modal").style.display = "block";
+    }
+</script>
+{% endblock %}

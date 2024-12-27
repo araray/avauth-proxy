@@ -1,11 +1,21 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, jsonify, request, render_template, session, redirect, url_for
+from avauth_proxy.models import User, UserProxy, Base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
 from avauth_proxy.utils.oauth_utils import load_oauth_providers
 from avauth_proxy.utils.logging_utils import log_configuration_on_error, log_event
 from avauth_proxy.utils.decorator_utils import log_route_error
 from avauth_proxy.config import Config
 from avauth_proxy import oauth
 
+engine = create_engine('sqlite:///database.db')
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+
 auth_bp = Blueprint("auth", __name__)
+user_bp = Blueprint("users", __name__)
 
 @auth_bp.route("/login")
 @log_route_error()
@@ -119,3 +129,26 @@ def validate_service(service_name):
 
     # Otherwise 403
     return "", 403
+
+@user_bp.route("/users", methods=["GET"])
+def list_users():
+    users = session.query(User).all()
+    user_list = [{"id": u.id, "email": u.email, "role": u.role} for u in users]
+    return jsonify(user_list)
+
+@user_bp.route("/users", methods=["POST"])
+def add_user():
+    data = request.json
+    new_user = User(email=data['email'], role=data.get('role', 'user'))
+    session.add(new_user)
+    session.commit()
+    return jsonify({"message": "User added successfully"}), 201
+
+@user_bp.route("/users/<int:id>", methods=["DELETE"])
+def delete_user(id):
+    user = session.query(User).get(id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    session.delete(user)
+    session.commit()
+    return jsonify({"message": "User deleted successfully"}), 200

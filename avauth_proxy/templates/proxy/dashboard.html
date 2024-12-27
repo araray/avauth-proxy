@@ -1,77 +1,60 @@
-{% extends 'base.html' %} {% block content %}
+{% extends "base.html" %} {% block content %}
 <h1>Proxy Management Dashboard</h1>
-
-<h2>Add New Proxy</h2>
-<form id="add-proxy-form">
-    <label>Service Name:</label>
-    <input type="text" name="service_name" required />
-    <label>URL/IP:</label>
-    <input type="text" name="url" required />
-    <label>Port:</label>
-    <input type="number" name="port" required />
-    <label>Template:</label>
-    <select name="template">
-        {% for template in templates %}
-        <option value="{{ template }}">{{ template }}</option>
-        {% endfor %}
-    </select>
-    <label>Auth Required:</label>
-    <input type="checkbox" name="auth_required" value="true" />
-    <label>Allowed Emails (comma-separated):</label>
-    <textarea name="allowed_emails"></textarea>
-    <label>Allowed Domains (comma-separated):</label>
-    <textarea name="allowed_domains"></textarea>
-
-    <button type="submit">Add Proxy</button>
-</form>
-
-<div id="status-message"></div>
 
 <h2>Current Proxies</h2>
 <table>
-    <tr>
-        <th>Service Name</th>
-        <th>URL/IP</th>
-        <th>Port</th>
-        <th>Template</th>
-        <th>Actions</th>
-    </tr>
-    {% for proxy in proxies %}
-    <tr>
-        <td>{{ proxy.service_name }}</td>
-        <td>{{ proxy.url }}</td>
-        <td>{{ proxy.port }}</td>
-        <td>{{ proxy.template }}</td>
-        <td>
-            <form method="post" action="{{ url_for('proxy.remove_proxy') }}">
-                <input
-                    type="hidden"
-                    name="service_name"
-                    value="{{ proxy.service_name }}"
-                />
-                <button type="submit">Remove</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
+    <thead>
+        <tr>
+            <th>Service Name</th>
+            <th>URL/IP</th>
+            <th>Port</th>
+            <th>Template</th>
+            <th>Health Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for proxy in proxies %}
+        <tr>
+            <td>{{ proxy.service_name }}</td>
+            <td>{{ proxy.url }}</td>
+            <td>{{ proxy.port }}</td>
+            <td>{{ proxy.template }}</td>
+            <td>
+                <span class="health-status-icon {{ proxy.health_status }}">
+                    {{ proxy.health_status }}
+                </span>
+            </td>
+            <td>
+                <form
+                    method="post"
+                    action="{{ url_for('proxy.remove_proxy') }}"
+                >
+                    <input
+                        type="hidden"
+                        name="service_name"
+                        value="{{ proxy.service_name }}"
+                    />
+                    <button type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
-<script>
-    document.getElementById("add-proxy-form").onsubmit = async function (e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const response = await fetch("{{ url_for('proxy.add_proxy') }}", {
-            method: "POST",
-            body: formData,
-        });
+<button onclick="runHealthChecks()">Run Health Checks</button>
 
+<script>
+    async function runHealthChecks() {
+        const response = await fetch("/metrics/healthcheck", {
+            method: "POST",
+        });
         if (response.ok) {
             location.reload();
         } else {
-            const errorMessage = await response.text();
-            document.getElementById("status-message").innerHTML =
-                `<p style="color:red;">${errorMessage}</p>`;
+            alert("Health check failed.");
         }
-    };
+    }
 </script>
 {% endblock %}

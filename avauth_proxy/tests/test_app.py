@@ -19,3 +19,11 @@ def test_login_page(client):
     # In test config, use_oauth2_proxy = false, so login page should be accessible.
     assert response.status_code == 200
     assert b"Please Choose a Login Provider" in response.data
+
+def test_add_template(client):
+    response = client.post('/templates', json={
+        "name": "Test Template",
+        "content": "server { listen 80; }"
+    })
+    assert response.status_code == 201
+    assert b"Template added successfully" in response.data

@@ -1,0 +1,48 @@
+{% extends "base.html" %} {% block content %}
+<h1>User Management</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+                <button onclick="deleteUser({{ user.id }})">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<button onclick="showAddUserForm()">Add User</button>
+
+<div id="user-modal" style="display: none">
+    <form id="user-form">
+        <label>Email:</label>
+        <input type="email" name="email" required />
+        <label>Role:</label>
+        <select name="role">
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+        </select>
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+<script>
+    async function deleteUser(id) {
+        await fetch(`/users/${id}`, { method: "DELETE" });
+        location.reload();
+    }
+    function showAddUserForm() {
+        document.getElementById("user-modal").style.display = "block";
+    }
+</script>
+{% endblock %}

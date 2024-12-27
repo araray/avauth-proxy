@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block content %}
+<h1>Log Viewer</h1>
+<select id="log-type">
+    <option value="nginx">Nginx Logs</option>
+    <option value="app">Application Logs</option>
+</select>
+<button onclick="fetchLogs()">View Logs</button>
+
+<div
+    id="log-viewer"
+    style="
+        white-space: pre;
+        margin-top: 20px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        height: 300px;
+        overflow-y: scroll;
+    "
+></div>
+
+<script>
+    async function fetchLogs() {
+        const logType = document.getElementById("log-type").value;
+        const response = await fetch(`/logs/${logType}`);
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById("log-viewer").innerText =
+                data.logs.join("");
+        } else {
+            document.getElementById("log-viewer").innerText =
+                "Error loading logs.";
+        }
+    }
+</script>
+{% endblock %}
