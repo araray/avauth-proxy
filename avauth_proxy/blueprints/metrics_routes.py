@@ -86,34 +86,54 @@ def proxy_metrics(proxy_id):
     finally:
         session.close()
 
-@metrics_bp.route('/metrics/proxy/<int:proxy_id>/data')
+@metrics_bp.route('/proxy/<int:proxy_id>/data')
 @require_proxy_access('read')
 def proxy_metrics_data(proxy_id):
-    """
-    API endpoint providing metrics data for visualization.
+    """API endpoint for proxy metrics data."""
+    service, session = get_metrics_service()
+    timeframe = request.args.get('timeframe', '1h')
 
-    Query Parameters:
-        metric: Type of metric to retrieve
-        interval: Time interval for aggregation
-        timeframe: Time range to query
+    try:
+        proxy = session.query(Proxy).get(proxy_id)
+        if not proxy:
+            return jsonify({'error': 'Proxy not found'}), 404
 
-    Returns:
-        JSON response with time series data
-    """
+        # Get health metrics
+        health_score = service.get_health_score(proxy_id)
+
+        # Get time series data
+        metrics = {
+            'health': {
+                'score': health_score,
+                'status': 'healthy' if health_score > 80 else 'warning'
+            },
+            'summary': service.get_proxy_metrics(proxy_id, timeframe),
+            'insights': service.get_proxy_insights(proxy_id),
+            'requests': service.get_time_series_data(proxy_id, 'requests', timeframe),
+            'latency': service.get_time_series_data(proxy_id, 'latency', timeframe),
+            'errors': service.get_time_series_data(proxy_id, 'errors', timeframe),
+            'bandwidth': service.get_time_series_data(proxy_id, 'bandwidth', timeframe)
+        }
+
+        return jsonify(metrics)
+    finally:
+        session.close()
+
+@metrics_bp.route('/proxy/<int:proxy_id>/metrics')
+@require_proxy_access('read')
+def proxy_metrics_detail(proxy_id):
+    """Display detailed metrics view for a specific proxy."""
     service, session = get_metrics_service()
     try:
-        metric = request.args.get('metric', 'requests')
-        interval = request.args.get('interval', '5m')
-        timeframe = request.args.get('timeframe', '1h')
+        proxy = session.query(Proxy).get(proxy_id)
+        if not proxy:
+            abort(404)
 
-        data = service.get_time_series_data(
-            proxy_id,
-            metric,
-            interval,
-            timeframe
+        return render_template(
+            'metrics/proxy_detail.html',
+            proxy=proxy,
+            proxy_id=proxy_id
         )
-
-        return jsonify(data)
     finally:
         session.close()
 

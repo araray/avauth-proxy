@@ -15,7 +15,7 @@ def create_app(config_object=None):
     Returns:
         Flask application instance
     """
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
 
     # Load configuration
     if config_object is not None:
