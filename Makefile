@@ -27,4 +27,4 @@ test: test-env-up
 
 clean:
 	docker compose down
-	rm -rf logs/
+	sudo rm -rf logs/
