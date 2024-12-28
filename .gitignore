@@ -16,6 +16,7 @@ proxies_config.toml
 nginx/nginx.conf
 ssl/*.pem
 RANDOM/
+outputs/
 
 # Distribution / packaging
 .Python
