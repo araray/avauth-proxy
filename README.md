@@ -27,26 +27,36 @@
 
 ## Architecture
 
-```
-+-------------+                 +------------------------------------+
-|  Web Client |  --->  443/HTTPS|    Nginx (SSL, Reverse Proxy)       |
-+-------------+                 |  - Dynamically includes conf files  |
-                                |  - Optionally calls /auth/validate/<service>
-                                +------------------------------------+
-                                                |
-                                                v
-                                   +-------------------------------+
-                                   | Flask (Admin & OAuth logic)  |
-                                   |  - Admin Dashboard            |
-                                   |  - Authlib or external oauth2-proxy
-                                   |  - Validate requests & whitelists
-                                   +-------------------------------+
-                                                |
-                                                v
-                                   +-------------------------------+
-                                   |  One or Many Backend Services |
-                                   |  (public or restricted)       |
-                                   +-------------------------------+
+```mermaid
+flowchart TD
+    %% Main flow
+    A[Web Client] -->|443/HTTPS| B[Nginx SSL, Reverse Proxy]
+    B -->|/auth/validate/<service> Optional| C[Flask Admin & OAuth Logic]
+    C --> D[One or Many Backend Services]
+
+    %% Nginx Details
+    subgraph Nginx ["Nginx (SSL, Reverse Proxy)"]
+        B1[SSL Termination]
+        B2[Dynamically Includes Config Files]
+        B3[Optionally Calls /auth/validate/<service>]
+        B1 --> B2 --> B3
+    end
+    B -.-> Nginx
+
+    %% Flask Details
+    subgraph Flask ["Flask (Admin & OAuth Logic)"]
+        C1[Admin Dashboard]
+        C2[Authlib or External OAuth2-Proxy]
+        C3[Validate Requests & Whitelists]
+        C1 --> C2 --> C3
+    end
+    C -.-> Flask
+
+    %% Backend Details
+    subgraph Backend ["Backend Services"]
+        D1[Public or Restricted Services]
+    end
+    D --> D1
 ```
 
 1. **Nginx**:
@@ -68,7 +78,7 @@
 
 1. **Clone and Configure**:
 
-    - Clone the repo and update 
+    - Clone the repo and update
 
         ```
         config.toml
@@ -80,10 +90,10 @@
         [app]
         secret_key = "some-secret-key"
         admin_emails = ["admin@yourdomain.com"]  # Only these can use the admin dashboard
-        
+
         [auth]
         use_oauth2_proxy = false  # or true for external proxy
-        
+
         [[oauth_providers]]
         name = "google"
         client_id = "YOUR_GOOGLE_CLIENT_ID"
