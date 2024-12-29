@@ -4,8 +4,10 @@ services:
     volumes:
       - .:/app
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
+      - ./data:/app/data
     environment:
       SECRET_KEY: your-secret-key
+      CONFIG_TOML_FILE: /app/config.toml.example
     ports:
       - "5001:5000"
     depends_on:
