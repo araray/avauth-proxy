@@ -22,7 +22,7 @@ def init_db(db_url: str):
     global engine, SessionLocal
     engine = create_engine(db_url, echo=False, future=True)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
-    Base.metadata.create_all(bind=engine)
+    #Base.metadata.create_all(bind=engine, checkfirst=True)
 
 def get_db():
     """Provide a transactional scope around a series of operations."""
