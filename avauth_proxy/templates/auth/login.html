@@ -16,4 +16,19 @@
     </div>
     {% endfor %}
 </div>
-{% endblock %}
+
+{% if local_auth_enabled %}
+<hr />
+<h2>Or Login with Username/Password</h2>
+<form method="POST" action="{{ url_for('auth.login_local') }}">
+    <label>Email</label>
+    <input type="email" name="email" required />
+    <label>Password</label>
+    <input type="password" name="password" required />
+    <button type="submit">Login</button>
+</form>
+<p>
+    Don't have an account?
+    <a href="{{ url_for('auth.signup_local') }}">Sign Up</a>
+</p>
+{% endif %} {% endblock %}

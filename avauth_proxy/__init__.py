@@ -9,6 +9,7 @@ app = Flask(__name__)
 
 # Now load dynamic config
 app_config = get_app_config()
+Config.app_config = app_config
 
 # Initialize the database
 db_url = app_config["database"].get("url", "sqlite:///./data/avauth.db")
