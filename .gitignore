@@ -17,6 +17,7 @@ nginx/nginx.conf
 ssl/*.pem
 RANDOM/
 outputs/
+data/
 
 # Distribution / packaging
 .Python

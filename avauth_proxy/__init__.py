@@ -54,3 +54,7 @@ def index():
         else:
             return redirect(url_for('auth.login'))
     return redirect(url_for('proxy.dashboard'))
+
+@app.route('/health')
+def health():
+    return "OK", 200
