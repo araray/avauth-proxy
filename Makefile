@@ -25,6 +25,9 @@ test: test-env-up
 	docker compose -f docker-compose_test.yaml exec app pytest
 	$(MAKE) test-env-down
 
+logs:
+	docker 
+
 clean:
 	docker compose down
 	rm -rf logs/
