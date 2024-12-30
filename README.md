@@ -6,24 +6,29 @@
 
 ### Key Features
 
-1. **Dynamic Proxy Management**
-    - Add or remove backend services via a Flask-based admin dashboard.
-    - Nginx configs are automatically generated and reloaded in real time.
-2. **Authentication Modes**
-    - **External**: use an existing `oauth2-proxy` container (set `use_oauth2_proxy = true` in `config.toml`).
-    - **Internal**: rely on Authlib with providers (Google, Microsoft, Mock, etc.)—set `use_oauth2_proxy = false`.
-3. **Access Control**
-    - Some services can be publicly accessible (no login required).
-    - Others can require authentication; you can specify whitelists of allowed emails or domains.
-    - Admin dashboard routes are restricted to configured “admin” emails, preventing unauthorized modifications.
-4. **Flexible Routing**
-    - Subdomain-based: e.g., `SERVICE_NAME.paranoid.land`.
-    - Path-based: e.g., `paranoid.land/SERVICE_NAME`.
-         In either approach, Nginx is configured to route requests to the correct backend while optionally enforcing authentication.
-5. **Monitoring / Metrics**
-    - Prometheus metrics endpoint at `/metrics`.
+- **Database Foundation**
+  - Built with SQLAlchemy ORM for flexibility.
+  - Supports multiple backends (default: SQLite).
+  - Managed schema migrations with Alembic.
 
-------
+- **Authentication**
+  - OAuth2 support via Authlib.
+  - Local username/password authentication.
+  - Simple user management.
+
+- **Proxy Management**
+  - Dynamic proxy configuration with Nginx.
+  - OAuth2 proxy integration.
+  - Per-service access control (email/domain-based).
+
+- **Monitoring**
+  - Prometheus metrics for proxy and authentication monitoring.
+
+- **Testing**
+  - Automated tests with pytest and pytest-cov.
+  - Docker Compose for integration testing.
+
+---
 
 ## Architecture
 
@@ -78,22 +83,16 @@ flowchart TD
 
 1. **Clone and Configure**:
 
-    - Clone the repo and update
-
-        ```
-        config.toml
-        ```
-
-        :
+    - Clone the repo and update `config.toml`:
 
         ```toml
         [app]
         secret_key = "some-secret-key"
         admin_emails = ["admin@yourdomain.com"]  # Only these can use the admin dashboard
-
+        
         [auth]
         use_oauth2_proxy = false  # or true for external proxy
-
+        
         [[oauth_providers]]
         name = "google"
         client_id = "YOUR_GOOGLE_CLIENT_ID"
@@ -105,7 +104,7 @@ flowchart TD
         label = "Sign in with Google"
         image_url = "https://developers.google.com/identity/images/g-logo.png"
         ```
-
+    
 2. **Build and Run** (internally):
 
     ```bash
@@ -117,7 +116,7 @@ flowchart TD
 
 3. **Access the Dashboard**:
 
-    - Go to `https://paranoid.land/proxy/dashboard` (or your domain/port).
+    - Go to `https://your_domain.tld/proxy/dashboard` (or your domain/port).
     - You’ll be redirected to `/auth/login` if **internal** OAuth is used and you’re not logged in.
     - If you log in with Google (and your email is in the `admin_emails`), you’ll see the admin interface.
 
@@ -133,7 +132,7 @@ In the admin dashboard (or via `proxies_config.toml`), define each service with:
 - **Auth Required**: (true/false)
 - **Allowed Emails**: comma-separated emails if you want a specific whitelist.
 - **Allowed Domains**: comma-separated domains for domain-based whitelisting.
-- **Custom Directives**: optional extra lines for advanced Nginx directives.
+- **Custom Directives**: optional extra configuration for advanced Nginx directives.
 
 **Path-based** routing example:
 
@@ -153,7 +152,7 @@ template = "oauth2_disabled.conf.j2"  # or "default.conf.j2" if using external o
 ```toml
 [[proxies]]
 service_name = "blog"
-server_name = "blog.paranoid.land"
+server_name = "blog.your_domain.tld"
 url = "10.0.0.6"
 port = "8000"
 auth_required = false
@@ -161,6 +160,21 @@ template = "oauth2_disabled.conf.j2"
 ```
 
 The app then **generates** an Nginx config block for each service, reloading Nginx on the fly.
+
+### Use existing `config.toml.example` *config* as a template
+
+The configuration file is specified in `config.toml.example` (rename it to `config.toml`):
+
+- **Database**: `sqlite:///./data/avauth.db` (default, in project's root)
+- **Authentication**: OAuth2 and/or local auth.
+- **Session Management**: Secure cookies with optional *SameSite* and *HttpOnly* flags.
+
+### Environment Variables
+
+| Variable           | Description                     |
+| ------------------ | ------------------------------- |
+| `SECRET_KEY`       | Flask secret key for sessions.  |
+| `CONFIG_TOML_FILE` | Path to the configuration file. |
 
 ------
 
@@ -178,6 +192,10 @@ The app then **generates** an Nginx config block for each service, reloading Ngi
 - Nginx “auth_request” calls `oauth2_proxy`, which handles login + whitelisting.
 - The Flask app becomes simpler; it does not handle individual OAuth logins.
 
+### Local authentication with simplistic user management
+
+- To enable local authentication, set `local_auth.enabled` to `true` in `config.toml`.
+
 ### Admin Dashboard Protection
 
 - `admin_emails` in `[app]` section of `config.toml` sets who can see or modify proxies.
@@ -192,8 +210,8 @@ The app then **generates** an Nginx config block for each service, reloading Ngi
 
 ## Subdomains vs. Paths
 
-1. **Subdomain**: You can define `server_name = "service.paranoid.land"` in each proxy config, then generate an Nginx `server { ... }` block per service. A wildcard SSL cert (`*.paranoid.land`) is typically used.
-2. **Path-based**: Single `server_name paranoid.land;` with location blocks. E.g. `location /myapp { proxy_pass http://10.0.0.5:8080; }`.
+1. **Subdomain**: You can define `server_name = "service.your_domain.tld"` in each proxy config, then generate an Nginx `server { ... }` block per service. A wildcard SSL cert (`*.your_domain.tld`) is typically used.
+2. **Path-based**: Single `server_name your_domain.tld;` with location blocks. E.g. `location /myapp { proxy_pass http://10.0.0.5:8080; }`.
 
 **Choose** whichever pattern suits your domain setup. The Jinja2 templates (`default.conf.j2`, `oauth2_disabled.conf.j2`, etc.) can be customized to handle either approach.
 
@@ -261,7 +279,31 @@ The app then **generates** an Nginx config block for each service, reloading Ngi
 
 ## Contributing
 
-Contributions are welcome! You can:
+Contributions are welcome! 
+
+**Running Locally**
+
+1. Install dependencies with Poetry:
+
+    ```bash
+    poetry install
+    ```
+
+2. Apply migrations:
+
+    ```bash
+    alembic upgrade head
+    ```
+
+3. Start the app:
+
+    ```bash
+    poetry run flask run
+    ```
+
+4. View the app at `http://localhost:5001`.
+
+You can:
 
 - **Submit Pull Requests**: whether documentation, bugfixes, new template expansions for advanced Nginx rules, or better access control logic.
 - **Add Test Cases**: especially for new OAuth providers, or whitelisting edge cases.

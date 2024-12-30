@@ -1,9 +1,14 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, request, redirect, url_for
 from avauth_proxy.utils.oauth_utils import load_oauth_providers
 from avauth_proxy.utils.logging_utils import log_configuration_on_error, log_event
 from avauth_proxy.utils.decorator_utils import log_route_error
 from avauth_proxy.config import Config
 from avauth_proxy import oauth
+from avauth_proxy.models import get_db, User
+from avauth_proxy.utils.security_utils import hash_password, check_password
+from sqlalchemy.exc import NoResultFound
+
+
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -14,9 +19,76 @@ def login():
     if Config.USE_OAUTH2_PROXY:
         return redirect("/oauth2/sign_in")
 
+    # If local_auth is enabled, show local auth form
+    app_config = Config.app_config
+    local_auth_enabled = app_config["local_auth"].get("enabled", False)
+
     providers = load_oauth_providers(oauth)
     providers_list = providers.values()
-    return render_template("auth/login.html", providers=providers_list)
+
+    return render_template("auth/login.html", providers=providers_list, local_auth_enabled=local_auth_enabled)
+
+@auth_bp.route("/login/local", methods=["POST"])
+@log_route_error()
+def login_local():
+    """
+    Handle local username/password authentication.
+    """
+    app_config = Config.app_config
+    if not app_config["local_auth"].get("enabled", False):
+        return "Local auth not enabled", 400
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not email or not password:
+        return "Missing credentials", 400
+
+    db_generator = get_db()
+    db = next(db_generator)
+    try:
+        user = db.query(User).filter(User.email == email).one()
+    except NoResultFound:
+        return "Invalid email or password", 401
+
+    if not check_password(password, user.password_hash):
+        return "Invalid email or password", 401
+
+    # Auth success
+    session["user"] = {"email": user.email}
+    log_event(f"User {user.email} logged in locally.", "auth_success")
+    return redirect(url_for("proxy.dashboard"))
+
+@auth_bp.route("/signup/local", methods=["GET", "POST"])
+@log_route_error()
+def signup_local():
+    """
+    Simple signup flow for local auth.
+    """
+    app_config = Config.app_config
+    if not app_config["local_auth"].get("enabled", False):
+        return "Local auth not enabled", 400
+
+    if request.method == "GET":
+        return render_template("auth/signup.html")
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+    if not email or not password:
+        return "Missing email or password", 400
+
+    db_generator = get_db()
+    db = next(db_generator)
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        return "User already exists", 400
+
+    new_user = User(email=email, password_hash=hash_password(password))
+    db.add(new_user)
+    db.commit()
+    log_event(f"New user {email} signed up locally.", "user_signup")
+    return redirect(url_for("auth.login"))
 
 @auth_bp.route("/login/<provider_name>")
 @log_route_error()

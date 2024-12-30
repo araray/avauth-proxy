@@ -1,17 +1,24 @@
 services:
   app:
     build: .
+    command: >
+      sh -c "
+      alembic upgrade head &&
+      pytest --cov=avauth_proxy --cov-report=term-missing
+      "
     volumes:
       - .:/app
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
+      - ./data:/app/data
     environment:
       SECRET_KEY: your-secret-key
+      CONFIG_TOML_FILE: /app/config.toml.example
     ports:
       - "5001:5000"
     depends_on:
       - oauth2_proxy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
