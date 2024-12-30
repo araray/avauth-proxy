@@ -15,8 +15,11 @@ proxies_config.toml
 *paranoid_land*
 nginx/nginx.conf
 ssl/*.pem
+nohup.out
 RANDOM/
 outputs/
+poetry.lock
+data/*.db
 
 # Distribution / packaging
 .Python
