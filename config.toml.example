@@ -10,6 +10,15 @@ admin_emails = ["example@domain.tld", "another.admin@example.tld"]
 # If false, handle OAuth2 internally via Authlib providers defined below.
 use_oauth2_proxy = true
 
+[database]
+# Default: use SQLite in 'data/avauth.db'
+# For Postgres: "postgresql+psycopg2://user:pass@db_host/db_name"
+url = "sqlite:///./data/avauth.db"
+
+[local_auth]
+# If true, allow local username/password authentication (alongside or instead of OAuth)
+enabled = false
+
 [[oauth_providers]]
 name = "mock_provider"
 client_id = "mock_client_id"

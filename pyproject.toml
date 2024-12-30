@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "avauth_proxy"
+version = "0.1.0"
+description = "Your auth proxy project"
+authors = ["Araray Velho <araray@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+keywords = ["auth", "proxy", "oauth2", "avauth", "araray"]
+homepage = "https://github.com/araray/avauth-proxy"
+repository = "https://github.com/araray/avauth-proxy"
+documentation = "https://github.com/araray/avauth-proxy"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aiohttp = "^3.11"
+alembic = "^1.10"
+Authlib = "^1.3"
+bcrypt = "^4.0"
+Flask = "^3.1"
+gunicorn = "^23.0"
+prometheus_client = "^0.21.0"
+psycopg2-binary = "^2.9.0"
+python-json-logger = "^3.2"
+requests-cache = "^1.2"
+requests-oauthlib = "^2.0"
+setuptools = "^75.0"
+SQLAlchemy = "^2.0"
+tomli = "^2.0"
+tomli_w = "^1.0"
+uuid = "^1.30"
+watchdog = "^6.0"
+wheel = "^0.45.0"
+
+[tool.poetry.dev-dependencies]
+pipdeptree = "^2.0"
+pytest = "^8.0"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+
+[tool.poetry.scripts]
+avauth-proxy = "avauth_proxy.app:app"
+
+[build-system]
+requires = ["poetry-core>=1.3.0"]
+build-backend = "poetry.core.masonry.api"

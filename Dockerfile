@@ -15,6 +15,6 @@ COPY . .
 EXPOSE 5000
 
 # Healthcheck for Flask app
-HEALTHCHECK CMD curl --fail http://localhost:5000 || exit 1
+HEALTHCHECK CMD curl --fail http://localhost:5000/health || exit 1
 
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "avauth_proxy.app:app"]
