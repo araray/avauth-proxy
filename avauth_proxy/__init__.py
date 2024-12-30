@@ -3,15 +3,23 @@ from avauth_proxy.config import Config
 from avauth_proxy.utils.config_utils import get_app_config
 from avauth_proxy.utils.logging_utils import configure_logging
 from authlib.integrations.flask_client import OAuth
-
+from avauth_proxy.models import init_db
 
 app = Flask(__name__)
 
 # Now load dynamic config
 app_config = get_app_config()
+Config.app_config = app_config
+
+# Initialize the database
+db_url = app_config["database"].get("url", "sqlite:///./data/avauth.db")
+init_db(db_url)
+
+# Load app config
 Config.USE_OAUTH2_PROXY = app_config.get("use_oauth2_proxy", True)
 Config.ADMIN_EMAILS = app_config.get("admin_emails", [])
 
+# Load Flask app config
 app.secret_key = app_config.get("secret_key", Config.SECRET_KEY)
 app.config.update({
     "SESSION_COOKIE_SECURE": app_config.get("session_cookie_secure", Config.SESSION_COOKIE_SECURE),
@@ -46,3 +54,7 @@ def index():
         else:
             return redirect(url_for('auth.login'))
     return redirect(url_for('proxy.dashboard'))
+
+@app.route('/health')
+def health():
+    return "OK", 200

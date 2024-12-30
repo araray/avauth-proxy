@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Avauth testing/dev artifacts
+poetry.lock
 src
 .vscode/
 docker-compose.yaml
@@ -17,6 +18,9 @@ nginx/nginx.conf
 ssl/*.pem
 RANDOM/
 outputs/
+data/*.db
+nohup.out
+
 
 # Distribution / packaging
 .Python

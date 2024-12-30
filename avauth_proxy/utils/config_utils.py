@@ -16,6 +16,11 @@ def get_app_config():
     config_data = load_config_file(Config.CONFIG_TOML_FILE)
     app_config = config_data.get("app", {})
     auth_config = config_data.get("auth", {})
+    database_config = config_data.get("database", {})
+    local_auth_config = config_data.get("local_auth", {})
     # Merge auth config into app config for convenience
     app_config.update(auth_config)
+    # Also merge database_config and local_auth_config
+    app_config["database"] = database_config
+    app_config["local_auth"] = local_auth_config
     return app_config
