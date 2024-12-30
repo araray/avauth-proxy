@@ -1,15 +1,25 @@
 # USAGE
 
+This guide explains how to set up and use Avauth Proxy for dynamic proxy management and authentication.
+
 ## 1. Running the Application
 
 1. **Clone the Repository**:
 
     ```bash
-    git clone https://github.com/<YOUR_USERNAME>/avauth-proxy.git
+    git clone https://github.com/araray/avauth-proxy.git
     cd avauth-proxy
     ```
 
-2. **Configure `config.toml`**:
+2. **Install dependencies**:
+
+    ```bash
+    poetry install
+    ```
+
+    Or create a Python virtual environment (using `python -m venv venv`), source it by `source venv/bin/activate` and then do `python -m pip install -r requirements.txt`
+
+3. **Configure `config.toml`**:
 
     - Define your secret key, admin emails, and whether you’re using external or internal OAuth:
 
@@ -33,10 +43,11 @@
         image_url = "https://developers.google.com/identity/images/g-logo.png"
         ```
 
-3. **Build and Launch**:
+4. **Build and Launch**:
 
     ```bash
     make build
+    alembic upgrade head
     make up
     ```
 
@@ -45,7 +56,7 @@
         - Nginx on ports 80 and 443.
         - (Optional) oauth2-proxy container if `use_oauth2_proxy = true`.
 
-4. **Access the App**:
+5. **Access the App**:
 
     - In your browser, go to `https://<YOUR_DOMAIN>/proxy/dashboard`.
     - If using **internal** OAuth, you will be prompted to log in at `/auth/login`.
@@ -123,15 +134,26 @@ On startup, AVauth-Proxy will read these proxies, generate the Nginx config, and
 
 - `oauth2_proxy` can be configured for email whitelisting if desired.
 
+### 3.3. Local Auth
+
+1. Enable local authentication in `config.toml`:
+
+    ```toml
+    [local_auth]
+    enabled = true
+    ```
+
+2. Access the local login/signup forms at `/auth/login` and `/auth/signup`.
+
 ------
 
 ## 4. Routing Methods (Subdomains vs. Paths)
 
 ### 4.1. Subdomain-Based
 
-- Each service is served at `<service_name>.paranoid.land`.
-- In your proxy definition, set `server_name = "myapp.paranoid.land"` instead of a path-based approach.
-- Typically you’ll use a wildcard certificate for `*.paranoid.land`.
+- Each service is served at `<service_name>.your_domain.tld`.
+- In your proxy definition, set `server_name = "myapp.your_domain.tld"` instead of a path-based approach.
+- Typically you’ll use a wildcard certificate for `*.your_domain.tld`.
 
 ### 4.2. Path-Based
 
@@ -252,17 +274,18 @@ You can restrict the entire `/proxy/` blueprint to “admin emails”:
 - **Roles & Permissions**: Extend the internal logic to have role-based controls beyond “admin vs. not admin.”
 - **CI/CD**: Integrate `make test` into your pipeline so you can verify changes before deploying.
 - **Performance Tuning**: Adjust Gunicorn workers, concurrency, and Nginx worker_processes for heavy loads.
+- **Database**
 
-------
+    Change the database backend by modifying the `[database]` section in `config.toml`.
 
-## Summary
+    Example for PostgreSQL:
 
-With `AVauth-Proxy`, you can quickly spin up a reverse-proxy setup that supports:
+    ```toml
+    [database]
+    url = "postgresql+psycopg2://user:pass@db_host/db_name"
+    ```
 
-- **Multiple backends** (added dynamically)
-- **Optional OAuth-based authentication** (internal or external)
-- **Flexible routing** by subdomain or path
-- **Easy admin control** for adding or removing proxies
-- **Selective user whitelists** to tighten security
+- **Dynamic Proxies**
 
-Refer to this `USAGE.md` any time you need reminders on how to configure and operate AVauth-Proxy in different modes. For deeper architecture details and contribution guidelines, see README.md. Happy proxying!
+    - Proxies are dynamically added to `/etc/nginx/conf.d/proxies/`.
+    - Configuration templates are in `nginx_templates/`.
