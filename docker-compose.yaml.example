@@ -1,6 +1,11 @@
 services:
   app:
     build: .
+    command: >
+      sh -c "
+      alembic upgrade head &&
+      pytest --cov=avauth_proxy --cov-report=term-missing
+      "
     volumes:
       - .:/app
       - ./nginx/proxies:/etc/nginx/conf.d/proxies
